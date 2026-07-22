@@ -1,0 +1,21 @@
+{
+  "demo": "demo_onnx",
+  "workflow": "yolo_infer_demo",
+  "status": "finished",
+  "compiled": {
+    "default_workspace": true,
+    "onnxruntime_cpu_feature": true
+  },
+  "runtime": {
+    "mode": "workflow_mock_backend",
+    "real_onnxruntime_backend_compiled": true,
+    "real_onnxruntime_backend_executed": false,
+    "real_onnxruntime_blocker": "onnxruntime.dll download timed out; runtime code uses ORT_DYLIB_PATH dynamic loading"
+  },
+  "result": {
+    "detections": 1,
+    "image": "Image(960x1280, 3, Bgr8)",
+    "total_duration_ms": 84.826,
+    "fps": 11.789
+  }
+}

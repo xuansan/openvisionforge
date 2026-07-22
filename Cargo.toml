@@ -1,0 +1,26 @@
+[workspace]
+members = [
+  "crates/vision-core",
+  "crates/vision-operators",
+  "crates/vision-opencv",
+  "crates/vision-io",
+  "crates/vision-infer",
+  "crates/vision-runtime",
+  "crates/vision-cli",
+  "apps/vision-studio/src-tauri",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+vision-core = { path = "crates/vision-core" }
+vision-operators = { path = "crates/vision-operators" }
+vision-opencv = { path = "crates/vision-opencv" }
+vision-io = { path = "crates/vision-io" }
+vision-infer = { path = "crates/vision-infer" }
+vision-runtime = { path = "crates/vision-runtime" }

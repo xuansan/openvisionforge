@@ -1,0 +1,9 @@
+[package]
+name = "vision-opencv"
+edition.workspace = true
+version.workspace = true
+build = "build.rs"
+
+[dependencies]
+serde_json.workspace = true
+vision-core.workspace = true

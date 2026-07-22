@@ -1,0 +1,36 @@
+{
+  "inputs": {
+    "data": {
+      "data": [
+        {
+          "bbox": {
+            "height": 640.0,
+            "width": 480.0,
+            "x": 240.0,
+            "y": 320.0
+          },
+          "label": "part",
+          "score": 0.8799999952316284
+        }
+      ],
+      "kind": "Detections"
+    }
+  },
+  "node_id": "record",
+  "payload": {
+    "data": [
+      {
+        "bbox": {
+          "height": 640.0,
+          "width": 480.0,
+          "x": 240.0,
+          "y": 320.0
+        },
+        "label": "part",
+        "score": 0.8799999952316284
+      }
+    ],
+    "kind": "Detections"
+  },
+  "run_id": "run_1783444144458936100"
+}

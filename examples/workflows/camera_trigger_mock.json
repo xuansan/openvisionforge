@@ -1,0 +1,129 @@
+{
+  "id": "camera_trigger_mock",
+  "name": "camera_trigger_mock",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "trigger",
+      "operator": "trigger.software.mock",
+      "params": {
+        "trigger_id": "trg_001",
+        "source": "cli"
+      }
+    },
+    {
+      "id": "camera",
+      "operator": "source.camera.mock",
+      "params": {
+        "camera_id": "cam_mock_001",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray.mock"
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.fixed.mock",
+      "params": {
+        "threshold": 120
+      }
+    },
+    {
+      "id": "blob",
+      "operator": "opencv.blob.detect.mock"
+    },
+    {
+      "id": "judge",
+      "operator": "judge.area_range",
+      "params": {
+        "max_area": 300
+      }
+    },
+    {
+      "id": "logic",
+      "operator": "logic.all_pass"
+    },
+    {
+      "id": "signal",
+      "operator": "output.signal.mock",
+      "params": {
+        "channel": "DO0"
+      }
+    },
+    {
+      "id": "record",
+      "operator": "record.save_json.mock"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "trigger",
+      "from_port": "trigger",
+      "to_node": "camera",
+      "to_port": "trigger"
+    },
+    {
+      "from_node": "camera",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "mask",
+      "to_node": "blob",
+      "to_port": "mask"
+    },
+    {
+      "from_node": "blob",
+      "from_port": "regions",
+      "to_node": "judge",
+      "to_port": "regions"
+    },
+    {
+      "from_node": "judge",
+      "from_port": "passed",
+      "to_node": "logic",
+      "to_port": "passed"
+    },
+    {
+      "from_node": "logic",
+      "from_port": "status",
+      "to_node": "signal",
+      "to_port": "status"
+    },
+    {
+      "from_node": "logic",
+      "from_port": "status",
+      "to_node": "record",
+      "to_port": "status"
+    },
+    {
+      "from_node": "camera",
+      "from_port": "capture",
+      "to_node": "record",
+      "to_port": "capture"
+    },
+    {
+      "from_node": "judge",
+      "from_port": "failed_regions",
+      "to_node": "record",
+      "to_port": "failed_regions"
+    },
+    {
+      "from_node": "signal",
+      "from_port": "signal",
+      "to_node": "record",
+      "to_port": "signal"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "display_image_test",
+  "name": "display_image_test",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "display",
+      "operator": "display.image",
+      "params": {}
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "display",
+      "to_port": "image"
+    }
+  ]
+}

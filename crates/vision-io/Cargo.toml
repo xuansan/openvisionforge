@@ -1,0 +1,25 @@
+[package]
+name = "vision-io"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+vision-core.workspace = true
+
+[features]
+default = []
+comm-http = []
+comm-websocket = []
+comm-redis = []
+comm-kafka = []
+comm-rabbitmq = []
+comm-mqtt = []
+comm-grpc = []
+db-mongodb = []
+db-mysql = []
+db-postgres = []
+db-milvus = []
+storage-rustfs = []
+storage-s3 = []
+storage-oss = []

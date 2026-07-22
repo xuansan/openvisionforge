@@ -1,0 +1,95 @@
+{
+  "id": "binary_contour_webhook_demo",
+  "name": "binary_contour_webhook_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray"
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.fixed",
+      "params": {
+        "threshold": 128
+      }
+    },
+    {
+      "id": "contours",
+      "operator": "opencv.measure.contours",
+      "params": {
+        "min_area": 100,
+        "max_contours": 10
+      }
+    },
+    {
+      "id": "save_binary",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/binary_contour_webhook_binary.png"
+      }
+    },
+    {
+      "id": "save_stats",
+      "operator": "storage.local.write",
+      "params": {
+        "output": "demo/output/binary_contour_webhook_stats.json"
+      }
+    },
+    {
+      "id": "webhook",
+      "operator": "comm.webhook.send",
+      "params": {
+        "mode": "real",
+        "url_env": "WECHAT_WEBHOOK_URL",
+        "wechat_text": true,
+        "text_prefix": "二值化轮廓尺寸识别结果"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "contours",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "save_binary",
+      "to_port": "image"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "stats",
+      "to_node": "save_stats",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "stats",
+      "to_node": "webhook",
+      "to_port": "stats"
+    }
+  ]
+}

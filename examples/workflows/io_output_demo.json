@@ -1,0 +1,198 @@
+{
+  "id": "io_output_demo",
+  "name": "io_output_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray"
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.fixed",
+      "params": {
+        "threshold": 128
+      }
+    },
+    {
+      "id": "ratio",
+      "operator": "opencv.measure.binary_ratio"
+    },
+    {
+      "id": "record_result",
+      "operator": "record.result.json"
+    },
+    {
+      "id": "record_image",
+      "operator": "record.image.save",
+      "params": {
+        "output": "demo/output/io_record_image.png"
+      }
+    },
+    {
+      "id": "storage_local",
+      "operator": "storage.local.write",
+      "params": {
+        "output": "demo/output/io_stats.json"
+      }
+    },
+    {
+      "id": "storage_nas",
+      "operator": "storage.nas.write",
+      "params": {
+        "root": "demo/output/nas",
+        "relative_path": "io_stats.json"
+      }
+    },
+    {
+      "id": "mongodb_insert",
+      "operator": "db.mongodb.insert",
+      "params": {
+        "uri": "mongodb://localhost:27017",
+        "database": "vision",
+        "collection": "inspection_results",
+        "outbox": "demo/output/db/mongodb_insert.json"
+      }
+    },
+    {
+      "id": "mysql_insert",
+      "operator": "db.mysql.insert",
+      "params": {
+        "uri": "mysql://localhost:3306",
+        "database": "vision",
+        "table": "inspection_results",
+        "outbox": "demo/output/db/mysql_insert.json"
+      }
+    },
+    {
+      "id": "pg_insert",
+      "operator": "db.pg.insert",
+      "params": {
+        "uri": "postgres://localhost:5432",
+        "database": "vision",
+        "table": "inspection_results",
+        "outbox": "demo/output/db/pg_insert.json"
+      }
+    },
+    {
+      "id": "milvus_insert",
+      "operator": "db.milvus.insert",
+      "params": {
+        "uri": "http://localhost:19530",
+        "collection": "inspection_vectors",
+        "outbox": "demo/output/db/milvus_insert.json"
+      }
+    },
+    {
+      "id": "websocket",
+      "operator": "comm.websocket.send",
+      "params": {
+        "url": "ws://localhost:9000/vision"
+      }
+    },
+    {
+      "id": "signal",
+      "operator": "action.signal.output",
+      "params": {
+        "channel": "DO0",
+        "value": "OK"
+      }
+    },
+    {
+      "id": "io_action",
+      "operator": "action.io.digital_write",
+      "params": {
+        "target": "local_io",
+        "channel": "DO0",
+        "value": "OK"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "ratio",
+      "to_port": "image"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "record_result",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "record_image",
+      "to_port": "image"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "storage_local",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "storage_nas",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "mongodb_insert",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "mysql_insert",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "pg_insert",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "milvus_insert",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "websocket",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "signal",
+      "from_port": "signal",
+      "to_node": "io_action",
+      "to_port": "signal"
+    }
+  ]
+}

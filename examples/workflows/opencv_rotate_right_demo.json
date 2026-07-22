@@ -1,0 +1,42 @@
+{
+  "id": "opencv_rotate_right_demo",
+  "name": "opencv_rotate_right_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "rotate",
+      "operator": "opencv.transform.rotate",
+      "params": {
+        "direction": "right"
+      }
+    },
+    {
+      "id": "write",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/workflow_rotate_right.png"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "rotate",
+      "to_port": "image"
+    },
+    {
+      "from_node": "rotate",
+      "from_port": "image",
+      "to_node": "write",
+      "to_port": "image"
+    }
+  ]
+}

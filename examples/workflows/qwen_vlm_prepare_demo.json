@@ -1,0 +1,42 @@
+{
+  "id": "qwen_vlm_prepare_demo",
+  "name": "qwen_vlm_prepare_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "inspect",
+      "operator": "infer.qwen.qwen3_vl.inspect",
+      "params": {
+        "model": "qwen3-vl-plus",
+        "api_key_env": "DASHSCOPE_API_KEY",
+        "prompt": "Inspect this industrial image and return pass/fail, defects, regions, and reasons.",
+        "response_format": "json"
+      }
+    },
+    {
+      "id": "record",
+      "operator": "record.result.json"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "inspect",
+      "to_port": "image"
+    },
+    {
+      "from_node": "inspect",
+      "from_port": "result",
+      "to_node": "record",
+      "to_port": "data"
+    }
+  ]
+}

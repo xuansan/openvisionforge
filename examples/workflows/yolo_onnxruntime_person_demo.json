@@ -1,0 +1,77 @@
+{
+  "id": "yolo_onnxruntime_person_demo",
+  "name": "yolo_onnxruntime_person_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "detect",
+      "operator": "infer.yolo26.detect",
+      "params": {
+        "model_path": "models/yolo11n.onnx",
+        "backend": "cpu",
+        "input_width": 640,
+        "input_height": 640,
+        "score_threshold": 0.25,
+        "nms_threshold": 0.45,
+        "letterbox": true,
+        "mean": [0, 0, 0],
+        "std": [1, 1, 1],
+        "labels": [
+          "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck",
+          "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench",
+          "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra",
+          "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
+          "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
+          "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
+          "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange",
+          "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
+          "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse",
+          "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink",
+          "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier",
+          "toothbrush"
+        ]
+      }
+    },
+    {
+      "id": "record_detections",
+      "operator": "record.result.json",
+      "params": {
+        "output": "records/yolo_onnxruntime_person_demo/detections.json"
+      }
+    },
+    {
+      "id": "record_raw",
+      "operator": "record.result.json",
+      "params": {
+        "output": "records/yolo_onnxruntime_person_demo/raw.json"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "detect",
+      "to_port": "image"
+    },
+    {
+      "from_node": "detect",
+      "from_port": "detections",
+      "to_node": "record_detections",
+      "to_port": "data"
+    },
+    {
+      "from_node": "detect",
+      "from_port": "raw",
+      "to_node": "record_raw",
+      "to_port": "payload"
+    }
+  ]
+}

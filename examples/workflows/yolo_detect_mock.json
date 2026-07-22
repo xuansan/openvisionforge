@@ -1,0 +1,88 @@
+{
+  "id": "yolo_detect_mock",
+  "name": "yolo_detect_mock",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "source",
+      "operator": "source.image.folder.mock",
+      "params": {
+        "folder_uri": "mock://dataset/parts",
+        "image_count": 12,
+        "current_index": 0,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "detect",
+      "operator": "dl.yolo.detect.mock",
+      "params": {
+        "model_id": "surface_defect_detector",
+        "score_threshold": 0.6,
+        "classes": ["part"]
+      }
+    },
+    {
+      "id": "judge",
+      "operator": "judge.count_range",
+      "params": {
+        "label": "part",
+        "min": 1,
+        "max": 1
+      }
+    },
+    {
+      "id": "logic",
+      "operator": "logic.all_pass"
+    },
+    {
+      "id": "record",
+      "operator": "record.save_json.mock"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "source",
+      "from_port": "image",
+      "to_node": "detect",
+      "to_port": "image"
+    },
+    {
+      "from_node": "detect",
+      "from_port": "detections",
+      "to_node": "judge",
+      "to_port": "detections"
+    },
+    {
+      "from_node": "judge",
+      "from_port": "passed",
+      "to_node": "logic",
+      "to_port": "passed"
+    },
+    {
+      "from_node": "logic",
+      "from_port": "status",
+      "to_node": "record",
+      "to_port": "status"
+    },
+    {
+      "from_node": "source",
+      "from_port": "batch",
+      "to_node": "record",
+      "to_port": "batch"
+    },
+    {
+      "from_node": "detect",
+      "from_port": "detections",
+      "to_node": "record",
+      "to_port": "detections"
+    },
+    {
+      "from_node": "judge",
+      "from_port": "failed_count",
+      "to_node": "record",
+      "to_port": "failed_count"
+    }
+  ]
+}

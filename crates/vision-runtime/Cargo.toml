@@ -1,0 +1,12 @@
+[package]
+name = "vision-runtime"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+vision-core.workspace = true
+vision-infer.workspace = true
+vision-io.workspace = true
+vision-opencv.workspace = true
+vision-operators.workspace = true

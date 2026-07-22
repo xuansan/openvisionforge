@@ -1,0 +1,32 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node / Tauri
+apps/vision-studio/node_modules/
+apps/vision-studio/dist/
+apps/vision-studio/src-tauri/target/
+
+# Runtime output
+/records/
+/demo/output/
+/demo_onnx/output/
+
+# Local models and SDKs
+/models/*
+!/models/.gitkeep
+/vendor/
+
+# Local binaries and generated artifacts
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+
+# Local temp/cache
+.DS_Store
+Thumbs.db
+*.log
+test
+tauri_crate_download_links.txt

@@ -1,0 +1,22 @@
+{
+  "id": "wechat_webhook_demo",
+  "name": "wechat_webhook_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "webhook",
+      "operator": "comm.webhook.send",
+      "params": {
+        "mode": "real",
+        "url_env": "WECHAT_WEBHOOK_URL",
+        "body": {
+          "msgtype": "text",
+          "text": {
+            "content": "vision-platform webhook real mode test ok"
+          }
+        }
+      }
+    }
+  ],
+  "edges": []
+}

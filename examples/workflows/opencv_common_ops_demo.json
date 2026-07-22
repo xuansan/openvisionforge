@@ -1,0 +1,95 @@
+{
+  "id": "opencv_common_ops_demo",
+  "name": "opencv_common_ops_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "resize",
+      "operator": "opencv.image.resize",
+      "params": {
+        "width": 480,
+        "height": 640
+      }
+    },
+    {
+      "id": "gaussian",
+      "operator": "opencv.filter.gaussian",
+      "params": {
+        "kernel": 5,
+        "sigma": 0
+      }
+    },
+    {
+      "id": "otsu",
+      "operator": "opencv.threshold.otsu"
+    },
+    {
+      "id": "open",
+      "operator": "opencv.morph.open",
+      "params": {
+        "kernel": 3,
+        "iterations": 1
+      }
+    },
+    {
+      "id": "canny",
+      "operator": "opencv.edge.canny",
+      "params": {
+        "low": 40,
+        "high": 120
+      }
+    },
+    {
+      "id": "write",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/workflow_common_ops.png"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "resize",
+      "to_port": "image"
+    },
+    {
+      "from_node": "resize",
+      "from_port": "image",
+      "to_node": "gaussian",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gaussian",
+      "from_port": "image",
+      "to_node": "otsu",
+      "to_port": "image"
+    },
+    {
+      "from_node": "otsu",
+      "from_port": "image",
+      "to_node": "open",
+      "to_port": "image"
+    },
+    {
+      "from_node": "open",
+      "from_port": "image",
+      "to_node": "canny",
+      "to_port": "image"
+    },
+    {
+      "from_node": "canny",
+      "from_port": "image",
+      "to_node": "write",
+      "to_port": "image"
+    }
+  ]
+}

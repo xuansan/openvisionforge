@@ -1,0 +1,45 @@
+{
+  "id": "yolo_infer_demo",
+  "name": "yolo_infer_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "detect",
+      "operator": "infer.yolo.detect",
+      "params": {
+        "model_path": "models/yolo26.onnx",
+        "backend": "cpu",
+        "input_width": 640,
+        "input_height": 640,
+        "score_threshold": 0.5,
+        "nms_threshold": 0.45,
+        "labels": ["part", "defect"]
+      }
+    },
+    {
+      "id": "record",
+      "operator": "record.result.json"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "detect",
+      "to_port": "image"
+    },
+    {
+      "from_node": "detect",
+      "from_port": "detections",
+      "to_node": "record",
+      "to_port": "data"
+    }
+  ]
+}

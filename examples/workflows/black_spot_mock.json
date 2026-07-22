@@ -1,0 +1,91 @@
+{
+  "id": "black_spot_mock",
+  "name": "black_spot_mock",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "source",
+      "operator": "source.image.file.mock",
+      "params": {
+        "width": 1280,
+        "height": 720,
+        "channels": 3,
+        "source_uri": "mock://black_spot.png"
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray.mock"
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.fixed.mock",
+      "params": {
+        "threshold": 120
+      }
+    },
+    {
+      "id": "blob",
+      "operator": "opencv.blob.detect.mock"
+    },
+    {
+      "id": "judge",
+      "operator": "judge.area_range",
+      "params": {
+        "max_area": 100
+      }
+    },
+    {
+      "id": "logic",
+      "operator": "logic.all_pass"
+    },
+    {
+      "id": "record",
+      "operator": "record.save_json.mock"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "source",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "mask",
+      "to_node": "blob",
+      "to_port": "mask"
+    },
+    {
+      "from_node": "blob",
+      "from_port": "regions",
+      "to_node": "judge",
+      "to_port": "regions"
+    },
+    {
+      "from_node": "judge",
+      "from_port": "passed",
+      "to_node": "logic",
+      "to_port": "passed"
+    },
+    {
+      "from_node": "logic",
+      "from_port": "status",
+      "to_node": "record",
+      "to_port": "status"
+    },
+    {
+      "from_node": "judge",
+      "from_port": "failed_regions",
+      "to_node": "record",
+      "to_port": "failed_regions"
+    }
+  ]
+}

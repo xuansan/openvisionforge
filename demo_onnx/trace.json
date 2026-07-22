@@ -1,0 +1,77 @@
+{
+  "run_id": "run_1783442587850702700",
+  "workflow_id": "yolo_infer_demo",
+  "nodes": [
+    {
+      "node_id": "read",
+      "operator": "opencv.image.read",
+      "inputs": [],
+      "outputs": [
+        {
+          "port": "image",
+          "value": "Image(960x1280, 3, Bgr8)"
+        }
+      ],
+      "status": "ok",
+      "metrics": {
+        "duration_ms": 82.109,
+        "input_images": 0,
+        "output_images": 1
+      }
+    },
+    {
+      "node_id": "detect",
+      "operator": "infer.yolo.detect",
+      "inputs": [
+        {
+          "port": "image",
+          "value": "Image(960x1280, 3, Bgr8)"
+        }
+      ],
+      "outputs": [
+        {
+          "port": "detections",
+          "value": "Detections(1)"
+        },
+        {
+          "port": "raw",
+          "value": "Json"
+        }
+      ],
+      "status": "ok",
+      "metrics": {
+        "duration_ms": 0.35,
+        "input_images": 1,
+        "output_images": 0
+      }
+    },
+    {
+      "node_id": "record",
+      "operator": "record.result.json",
+      "inputs": [
+        {
+          "port": "data",
+          "value": "Detections(1)"
+        }
+      ],
+      "outputs": [
+        {
+          "port": "files",
+          "value": "Json"
+        }
+      ],
+      "status": "ok",
+      "metrics": {
+        "duration_ms": 2.185,
+        "input_images": 0,
+        "output_images": 0
+      }
+    }
+  ],
+  "metrics": {
+    "total_duration_ms": 84.826,
+    "processed_frames": 1,
+    "image_outputs": 1,
+    "fps": 11.789
+  }
+}

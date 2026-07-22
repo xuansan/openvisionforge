@@ -1,0 +1,155 @@
+{
+  "id": "draw_enhance_demo",
+  "name": "Draw Enhance Demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "clahe",
+      "operator": "opencv.enhance.clahe",
+      "params": {
+        "clip_limit": 2.0,
+        "tile_grid_size": 8
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray",
+      "params": {}
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.otsu",
+      "params": {}
+    },
+    {
+      "id": "contours",
+      "operator": "opencv.analysis.find_contours",
+      "params": {
+        "min_area": 20,
+        "max_contours": 20
+      }
+    },
+    {
+      "id": "area",
+      "operator": "opencv.measure.area",
+      "params": {
+        "px_per_mm": 10
+      }
+    },
+    {
+      "id": "draw_contours",
+      "operator": "opencv.draw.contours",
+      "params": {
+        "thickness": 2,
+        "font_scale": 0.5
+      }
+    },
+    {
+      "id": "draw_measurements",
+      "operator": "opencv.draw.measurements",
+      "params": {
+        "thickness": 2,
+        "font_scale": 0.6
+      }
+    },
+    {
+      "id": "draw_text",
+      "operator": "opencv.draw.text",
+      "params": {
+        "text": "VISION DEMO",
+        "x": 24,
+        "y": 40,
+        "thickness": 2,
+        "font_scale": 0.8
+      }
+    },
+    {
+      "id": "save",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/draw_enhance_demo.png"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "clahe",
+      "to_port": "image"
+    },
+    {
+      "from_node": "clahe",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "contours",
+      "to_port": "image"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "contours",
+      "to_node": "area",
+      "to_port": "contours"
+    },
+    {
+      "from_node": "clahe",
+      "from_port": "image",
+      "to_node": "draw_contours",
+      "to_port": "image"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "contours",
+      "to_node": "draw_contours",
+      "to_port": "contours"
+    },
+    {
+      "from_node": "draw_contours",
+      "from_port": "image",
+      "to_node": "draw_measurements",
+      "to_port": "image"
+    },
+    {
+      "from_node": "area",
+      "from_port": "measurements",
+      "to_node": "draw_measurements",
+      "to_port": "measurements"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "contours",
+      "to_node": "draw_measurements",
+      "to_port": "contours"
+    },
+    {
+      "from_node": "draw_measurements",
+      "from_port": "image",
+      "to_node": "draw_text",
+      "to_port": "image"
+    },
+    {
+      "from_node": "draw_text",
+      "from_port": "image",
+      "to_node": "save",
+      "to_port": "image"
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "id": "quality_contour_judge_demo",
+  "name": "Quality Contour Judge Demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray",
+      "params": {}
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.otsu",
+      "params": {}
+    },
+    {
+      "id": "contours",
+      "operator": "opencv.analysis.find_contours",
+      "params": {
+        "min_area": 20,
+        "max_contours": 100
+      }
+    },
+    {
+      "id": "count_rule",
+      "operator": "rule.count_range",
+      "params": {
+        "rule_id": "contour_count",
+        "min": 1,
+        "max": 100
+      }
+    },
+    {
+      "id": "final",
+      "operator": "logic.final_result",
+      "params": {
+        "rule_id": "final_quality"
+      }
+    },
+    {
+      "id": "save_image",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/quality_contour_judge_binary.png"
+      }
+    },
+    {
+      "id": "save_result",
+      "operator": "record.result.json",
+      "params": {
+        "output": "demo/output/quality_contour_judge_result.json"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "contours",
+      "to_port": "image"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "contours",
+      "to_node": "count_rule",
+      "to_port": "data"
+    },
+    {
+      "from_node": "count_rule",
+      "from_port": "rule",
+      "to_node": "final",
+      "to_port": "rule"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "save_image",
+      "to_port": "image"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "stats",
+      "to_node": "save_image",
+      "to_port": "stats"
+    },
+    {
+      "from_node": "final",
+      "from_port": "final",
+      "to_node": "save_result",
+      "to_port": "payload"
+    },
+    {
+      "from_node": "final",
+      "from_port": "status",
+      "to_node": "save_result",
+      "to_port": "status"
+    }
+  ]
+}

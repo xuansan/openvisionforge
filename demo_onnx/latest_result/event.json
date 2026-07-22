@@ -1,0 +1,12 @@
+{
+  "run_id": "run_1783444144458936100",
+  "workflow_id": "yolo_infer_demo",
+  "status": "finished",
+  "result": "UNKNOWN",
+  "metrics": {
+    "total_duration_ms": 33.205,
+    "processed_frames": 1,
+    "image_outputs": 1,
+    "fps": 30.116
+  }
+}

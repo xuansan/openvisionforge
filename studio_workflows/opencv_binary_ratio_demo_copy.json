@@ -1,0 +1,83 @@
+{
+  "id": "opencv_binary_ratio_demo_copy",
+  "name": "opencv_binary_ratio_demo_copy",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray",
+      "params": {}
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.fixed",
+      "params": {
+        "threshold": 128
+      }
+    },
+    {
+      "id": "ratio",
+      "operator": "opencv.measure.binary_ratio",
+      "params": {}
+    },
+    {
+      "id": "write",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/workflow_binary.png"
+      }
+    },
+    {
+      "id": "grpc_call_1",
+      "operator": "comm.grpc.call",
+      "params": {
+        "endpoint": "http://localhost:50051",
+        "metadata": {},
+        "method": "VisionResultService/Push",
+        "request_schema": {},
+        "service": "VisionResultService",
+        "timeout_ms": 3000,
+        "tls": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "ratio",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "write",
+      "to_port": "image"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "write",
+      "to_port": "stats"
+    }
+  ]
+}
