@@ -1,5 +1,6 @@
 mod backend;
 mod decode;
+mod model_assets;
 mod nodes;
 #[cfg(feature = "onnxruntime")]
 mod preprocess;

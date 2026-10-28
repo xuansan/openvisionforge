@@ -1,7 +1,7 @@
 use vision_core::{OperatorFn, OperatorRegistry};
 
 use crate::schema::{
-    bool_param, enum_param, file_param, json_param, number_param, schema_with_params,
+    bool_param, enum_param, file_param, json_param, number_param, schema_with_params, string_param,
 };
 
 pub(crate) fn register_detect_node(
@@ -44,21 +44,39 @@ pub(crate) const DETECT_PARAMS: &[vision_core::ParamSchema] = &[
     file_param(
         "model_path",
         "Model Path",
-        true,
+        false,
         None,
-        "Ultralytics exported model path, usually ONNX for the current MVP",
+        "Exported model path; takes precedence over model_id",
     )
     .group("Model")
     .order(10)
     .placeholder("models/yolo26.onnx")
     .accept(&[".onnx", ".engine", ".rknn", ".bmodel"]),
+    string_param(
+        "model_id",
+        "Model ID",
+        false,
+        None,
+        "Model key from models/registry.json",
+    )
+    .group("Model")
+    .order(15)
+    .placeholder("yolo11n-coco"),
     enum_param(
         "backend",
         "Backend",
         false,
         Some("onnxruntime"),
         "Execution backend",
-        &["onnxruntime", "cuda", "tensorrt", "rknn", "sophon", "mock"],
+        &[
+            "onnxruntime",
+            "cpu",
+            "cuda",
+            "tensorrt",
+            "rknn",
+            "sophon",
+            "mock",
+        ],
     )
     .group("Model")
     .order(20),
@@ -104,10 +122,43 @@ pub(crate) const DETECT_PARAMS: &[vision_core::ParamSchema] = &[
     .group("Postprocess")
     .order(60)
     .range(0.0, 1.0, 0.01),
+    enum_param(
+        "decode_format",
+        "Decode Format",
+        false,
+        Some("auto"),
+        "YOLO output layout; auto uses label count to distinguish objectness layouts",
+        &["auto", "ultralytics", "ultralytics_objectness"],
+    )
+    .group("Postprocess")
+    .order(65)
+    .advanced(true),
     json_param("labels", "Labels", false, Some("[]"), "Class label list")
         .group("Postprocess")
         .order(70)
         .placeholder("[\"ok\",\"defect\"]"),
+    number_param(
+        "top_k",
+        "Top K",
+        false,
+        Some("5"),
+        "Maximum classification results; ignored by non-classification tasks",
+    )
+    .group("Postprocess")
+    .order(75)
+    .range(1.0, 1000.0, 1.0)
+    .advanced(true),
+    number_param(
+        "mask_threshold",
+        "Mask Threshold",
+        false,
+        Some("0.5"),
+        "Prototype mask probability threshold; ignored by non-segmentation tasks",
+    )
+    .group("Postprocess")
+    .order(77)
+    .range(0.0, 1.0, 0.01)
+    .advanced(true),
     json_param(
         "mean",
         "Mean",

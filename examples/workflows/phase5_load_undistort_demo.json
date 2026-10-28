@@ -1,0 +1,53 @@
+{
+  "id": "phase5_load_undistort_demo",
+  "name": "phase5_load_undistort_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "load_calibration",
+      "operator": "calibration.camera.load",
+      "params": {
+        "path": "examples/calibration/sample_camera_calibration.json"
+      }
+    },
+    {
+      "id": "undistort",
+      "operator": "calibration.image.undistort",
+      "params": {}
+    },
+    {
+      "id": "save",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/phase5_undistorted.png"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "undistort",
+      "to_port": "image"
+    },
+    {
+      "from_node": "load_calibration",
+      "from_port": "camera_calibration",
+      "to_node": "undistort",
+      "to_port": "camera_calibration"
+    },
+    {
+      "from_node": "undistort",
+      "from_port": "image",
+      "to_node": "save",
+      "to_port": "image"
+    }
+  ]
+}

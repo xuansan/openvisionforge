@@ -8,7 +8,7 @@ pub(crate) fn register(registry: &mut OperatorRegistry) {
         "db.mongodb.insert",
         "MongoDB Insert",
         &[],
-        &["payload", "data", "stats"],
+        &["payload", "result", "final", "data", "stats"],
         mongodb_insert,
     );
 }

@@ -89,8 +89,28 @@ pub(crate) fn register(registry: &mut OperatorRegistry) {
         logic_and,
     ));
     registry.register(schema_with_params(
+        "logic.all",
+        "All Rules",
+        "Rules/Logic",
+        &["rule"],
+        &["rule2", "rule3", "rule4", "rule5", "rules"],
+        &["rule", "passed"],
+        LOGIC_PARAMS,
+        logic_and,
+    ));
+    registry.register(schema_with_params(
         "logic.or",
         "OR",
+        "Rules/Logic",
+        &["rule"],
+        &["rule2", "rule3", "rule4", "rule5", "rules"],
+        &["rule", "passed"],
+        LOGIC_PARAMS,
+        logic_or,
+    ));
+    registry.register(schema_with_params(
+        "logic.any",
+        "Any Rule",
         "Rules/Logic",
         &["rule"],
         &["rule2", "rule3", "rule4", "rule5", "rules"],
@@ -107,6 +127,16 @@ pub(crate) fn register(registry: &mut OperatorRegistry) {
         &["rule", "passed"],
         LOGIC_PARAMS,
         logic_not,
+    ));
+    registry.register(schema_with_params(
+        "logic.n_of_m",
+        "N of M Rules",
+        "Rules/Logic",
+        &["rule"],
+        &["rule2", "rule3", "rule4", "rule5", "rules"],
+        &["rule", "passed"],
+        N_OF_M_PARAMS,
+        logic_n_of_m,
     ));
     registry.register(schema_with_params(
         "logic.final_result",
@@ -341,6 +371,21 @@ const REGION_PARAMS: &[ParamSchema] = &[
 ];
 
 const LOGIC_PARAMS: &[ParamSchema] = &[base_rule_id()];
+const N_OF_M_PARAMS: &[ParamSchema] = &[
+    base_rule_id(),
+    ParamSchema::new(
+        "required_passes",
+        "Required Passes",
+        ParamKind::Number,
+        true,
+        Some("1"),
+        "Minimum number of input rules that must pass",
+        &[],
+    )
+    .group("Logic")
+    .order(20)
+    .range(1.0, 1000.0, 1.0),
+];
 const FINAL_PARAMS: &[ParamSchema] = &[base_rule_id()];
 
 const fn base_rule_id() -> ParamSchema {
@@ -561,6 +606,25 @@ fn logic_not(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
     ))
 }
 
+fn logic_n_of_m(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
+    let rules = collect_rules(ctx);
+    let required = number(&ctx.node.params, "required_passes", 1.0) as usize;
+    let passed = rules.iter().filter(|rule| rule.ok).count();
+    let ok = !rules.is_empty() && required > 0 && passed >= required;
+    rule_out(rule(
+        ctx,
+        ok,
+        serde_json::json!({ "passed": passed, "total": rules.len() }),
+        serde_json::json!({ "required_passes": required }),
+        if ok {
+            "通过规则数量达到要求"
+        } else {
+            "通过规则数量不足"
+        },
+        None,
+    ))
+}
+
 fn final_result(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
     let rules = collect_rules(ctx);
     let failed_rules = rules
@@ -697,6 +761,28 @@ fn value_number(value: Option<&Value>, field: &str) -> Option<f64> {
             "confidence" | "score" => detections.first().map(|item| item.score),
             _ => None,
         },
+        Value::Classifications(items) => match field {
+            "count" => Some(items.len() as f64),
+            "confidence" | "score" => items.first().map(|item| item.score),
+            _ => None,
+        },
+        Value::Segmentations(items) => match field {
+            "count" => Some(items.len() as f64),
+            "confidence" | "score" => items.first().map(|item| item.score),
+            "area_px" => items.first().map(|item| item.area_px),
+            _ => None,
+        },
+        Value::Poses(items) => match field {
+            "count" => Some(items.len() as f64),
+            "confidence" | "score" => items.first().map(|item| item.score),
+            _ => None,
+        },
+        Value::OrientedBoxes(items) => match field {
+            "count" => Some(items.len() as f64),
+            "confidence" | "score" => items.first().map(|item| item.score),
+            "angle_deg" => items.first().map(|item| item.angle_deg),
+            _ => None,
+        },
         Value::Location(location) => match field {
             "score" | "confidence" => location.score,
             "x" => Some(location.x),
@@ -738,6 +824,10 @@ fn value_count(value: Option<&Value>) -> usize {
         Some(Value::Regions(items)) => items.len(),
         Some(Value::Contours(items)) => items.count,
         Some(Value::Detections(items)) => items.len(),
+        Some(Value::Classifications(items)) => items.len(),
+        Some(Value::Segmentations(items)) => items.len(),
+        Some(Value::Poses(items)) => items.len(),
+        Some(Value::OrientedBoxes(items)) => items.len(),
         Some(Value::Measurements(items)) => items.measurements.len(),
         Some(Value::Rules(items)) => items.len(),
         Some(Value::Json(json)) => {
@@ -756,6 +846,12 @@ fn classes(value: Option<&Value>) -> Vec<String> {
         Some(Value::Detections(detections)) => {
             detections.iter().map(|item| item.label.clone()).collect()
         }
+        Some(Value::Classifications(items)) => {
+            items.iter().map(|item| item.label.clone()).collect()
+        }
+        Some(Value::Segmentations(items)) => items.iter().map(|item| item.label.clone()).collect(),
+        Some(Value::Poses(items)) => items.iter().map(|item| item.label.clone()).collect(),
+        Some(Value::OrientedBoxes(items)) => items.iter().map(|item| item.label.clone()).collect(),
         Some(Value::Json(json)) => json_path(json, "class")
             .or_else(|| json_path(json, "label"))
             .and_then(serde_json::Value::as_str)
@@ -779,6 +875,25 @@ fn boxes(value: Option<&Value>) -> Vec<(f64, f64, f64, f64)> {
         Some(Value::Detections(items)) => items
             .iter()
             .map(|item| (item.bbox.x, item.bbox.y, item.bbox.width, item.bbox.height))
+            .collect(),
+        Some(Value::Segmentations(items)) => items
+            .iter()
+            .map(|item| (item.bbox.x, item.bbox.y, item.bbox.width, item.bbox.height))
+            .collect(),
+        Some(Value::Poses(items)) => items
+            .iter()
+            .map(|item| (item.bbox.x, item.bbox.y, item.bbox.width, item.bbox.height))
+            .collect(),
+        Some(Value::OrientedBoxes(items)) => items
+            .iter()
+            .map(|item| {
+                (
+                    item.cx - item.width / 2.0,
+                    item.cy - item.height / 2.0,
+                    item.width,
+                    item.height,
+                )
+            })
             .collect(),
         Some(Value::Location(location)) => location
             .bbox

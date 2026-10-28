@@ -16,7 +16,22 @@ static BRIDGE_WORKER: OnceLock<Mutex<Option<BridgeWorker>>> = OnceLock::new();
 
 pub(crate) fn bridge_image(args: &[&str]) -> Result<ImageFrame> {
     let value = bridge_json(args)?;
-    Ok(ImageFrame {
+    Ok(image_frame(&value))
+}
+
+pub(crate) fn bridge_image_and_mask(args: &[&str]) -> Result<(ImageFrame, Option<String>)> {
+    let value = bridge_json(args)?;
+    Ok((
+        image_frame(&value),
+        value
+            .get("mask_uri")
+            .and_then(|value| value.as_str())
+            .map(str::to_string),
+    ))
+}
+
+fn image_frame(value: &serde_json::Value) -> ImageFrame {
+    ImageFrame {
         width: value.get("width").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
         height: value.get("height").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
         channels: value.get("channels").and_then(|v| v.as_u64()).unwrap_or(0) as u8,
@@ -29,7 +44,7 @@ pub(crate) fn bridge_image(args: &[&str]) -> Result<ImageFrame> {
             .get("source_uri")
             .and_then(|v| v.as_str())
             .map(str::to_string),
-    })
+    }
 }
 
 pub(crate) fn bridge_json(args: &[&str]) -> Result<serde_json::Value> {

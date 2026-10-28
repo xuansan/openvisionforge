@@ -1,0 +1,19 @@
+{
+  "id": "phase6_short_circuit_demo",
+  "name": "phase6_short_circuit_demo",
+  "version": "0.1.0",
+  "metadata": {"purpose":"verify conditional skip and always-run result handling"},
+  "nodes": [
+    {"id":"measurement","operator":"opencv.measure.point_distance","params":{"x1":0,"y1":0,"x2":200,"y2":0}},
+    {"id":"critical_rule","operator":"rule.numeric_range","params":{"rule_id":"critical_distance","field":"point_distance","min":0,"max":100},"execution":{"short_circuit_on_ng":true}},
+    {"id":"conditional_branch","operator":"logic.not","params":{"rule_id":"must_be_skipped"},"execution":{"run_when":"all_ok"}},
+    {"id":"final","operator":"logic.final_result","params":{"rule_id":"short_circuit_final"},"execution":{"always_run":true}},
+    {"id":"record","operator":"record.result.json","params":{"output":"demo/output/phase6_short_circuit_result.json"},"execution":{"always_run":true}}
+  ],
+  "edges": [
+    {"from_node":"measurement","from_port":"measurements","to_node":"critical_rule","to_port":"data"},
+    {"from_node":"critical_rule","from_port":"rule","to_node":"conditional_branch","to_port":"rule"},
+    {"from_node":"critical_rule","from_port":"rule","to_node":"final","to_port":"rule"},
+    {"from_node":"final","from_port":"final","to_node":"record","to_port":"final"}
+  ]
+}

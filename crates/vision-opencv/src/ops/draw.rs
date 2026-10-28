@@ -19,6 +19,36 @@ pub(crate) fn register(registry: &mut OperatorRegistry) {
         boxes,
     ));
     registry.register(schema_with_params(
+        "opencv.draw.segmentations",
+        "OpenCV Draw Segmentations",
+        "OpenCv/Draw",
+        &["image"],
+        &["masks"],
+        &["image"],
+        DRAW_PARAMS,
+        segmentations,
+    ));
+    registry.register(schema_with_params(
+        "opencv.draw.poses",
+        "OpenCV Draw Poses",
+        "OpenCv/Draw",
+        &["image"],
+        &["poses"],
+        &["image"],
+        DRAW_PARAMS,
+        poses,
+    ));
+    registry.register(schema_with_params(
+        "opencv.draw.oriented_boxes",
+        "OpenCV Draw Oriented Boxes",
+        "OpenCv/Draw",
+        &["image"],
+        &["oriented_boxes"],
+        &["image"],
+        DRAW_PARAMS,
+        oriented_boxes,
+    ));
+    registry.register(schema_with_params(
         "opencv.draw.contours",
         "OpenCV Draw Contours",
         "OpenCv/Draw",
@@ -186,6 +216,71 @@ fn contours(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
         }
     }
     draw_overlay(ctx, rows, "contours.png")
+}
+
+fn segmentations(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
+    let mut rows = Vec::new();
+    if let Some(Value::Segmentations(items)) = ctx.inputs.get("masks") {
+        for item in items {
+            if let Some(mask) = &item.source_uri {
+                rows.push(format!("mask\t{}\t{}", mask, clean(&item.label)));
+            }
+            rows.push(format!(
+                "box\t{}\t{}\t{}\t{}\t{}\t{:.3}",
+                item.bbox.x,
+                item.bbox.y,
+                item.bbox.width,
+                item.bbox.height,
+                clean(&item.label),
+                item.score
+            ));
+        }
+    }
+    draw_overlay(ctx, rows, "segmentations.png")
+}
+
+fn poses(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
+    let mut rows = Vec::new();
+    if let Some(Value::Poses(items)) = ctx.inputs.get("poses") {
+        for item in items {
+            rows.push(format!(
+                "box\t{}\t{}\t{}\t{}\t{}\t{:.3}",
+                item.bbox.x,
+                item.bbox.y,
+                item.bbox.width,
+                item.bbox.height,
+                clean(&item.label),
+                item.score
+            ));
+            let points = item
+                .keypoints
+                .iter()
+                .map(|point| format!("{:.3},{:.3},{:.3}", point.x, point.y, point.score))
+                .collect::<Vec<_>>()
+                .join(";");
+            rows.push(format!("keypoints\t{}", points));
+        }
+    }
+    draw_overlay(ctx, rows, "poses.png")
+}
+
+fn oriented_boxes(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
+    let mut rows = Vec::new();
+    if let Some(Value::OrientedBoxes(items)) = ctx.inputs.get("oriented_boxes") {
+        for item in items {
+            rows.push(format!(
+                "obb\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{:.3}",
+                item.cx,
+                item.cy,
+                item.width,
+                item.height,
+                item.angle_deg,
+                clean(&item.label),
+                item.score
+            ));
+        }
+    }
+    draw_overlay(ctx, rows, "oriented_boxes.png")
 }
 
 fn measurements(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {

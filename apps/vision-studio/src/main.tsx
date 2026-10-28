@@ -32,6 +32,24 @@ type FileEntry = {
   size: number;
 };
 
+type ModelCatalog = {
+  version?: number;
+  models?: Record<string, {
+    family?: string;
+    version?: string;
+    task?: string;
+    format?: string;
+    status?: string;
+    path?: string;
+    size_bytes?: number;
+    sha256?: string;
+    input_width?: number;
+    input_height?: number;
+    recommended_backend?: string;
+    validated_at?: string;
+  }>;
+};
+
 type ParamSchema = {
   key: string;
   label: string;
@@ -83,6 +101,11 @@ type WorkflowNode = {
   id: string;
   operator: string;
   params?: Record<string, JsonValue> | null;
+  execution?: {
+    run_when?: "always" | "all_ok" | "any_ok" | "all_ng" | "any_ng";
+    always_run?: boolean;
+    short_circuit_on_ng?: boolean;
+  };
 };
 
 type WorkflowEdge = {
@@ -96,6 +119,7 @@ type Workflow = {
   id: string;
   name: string;
   version: string;
+  metadata?: Record<string, JsonValue>;
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
 };
@@ -277,6 +301,7 @@ function App() {
   const [examples, setExamples] = useState<FileEntry[]>([]);
   const [studioWorkflows, setStudioWorkflows] = useState<FileEntry[]>([]);
   const [models, setModels] = useState<FileEntry[]>([]);
+  const [modelCatalog, setModelCatalog] = useState<ModelCatalog | null>(null);
   const [records, setRecords] = useState<RecordEntry[]>([]);
   const [nodeSmokeStatus, setNodeSmokeStatus] = useState<NodeSmokeStatus | null>(null);
   const [workflow, setWorkflow] = useState<Workflow>(emptyWorkflow);
@@ -310,11 +335,12 @@ function App() {
   async function boot() {
     setCommand({ action: "启动", state: "running", message: "正在读取 Rust runtime schema、示例流程、模型和运行记录..." });
     try {
-      const [schema, runtime, exampleFiles, modelFiles, recordFiles, smokeStatus] = await Promise.all([
+      const [schema, runtime, exampleFiles, modelFiles, catalog, recordFiles, smokeStatus] = await Promise.all([
         invoke<OperatorSchema[]>("export_schema"),
         invoke<RuntimeStatus>("runtime_status"),
         invoke<FileEntry[]>("list_examples"),
         invoke<FileEntry[]>("list_models"),
+        invoke<ModelCatalog>("model_catalog"),
         invoke<RecordEntry[]>("list_records"),
         invoke<NodeSmokeStatus>("node_smoke_status"),
       ]);
@@ -324,6 +350,7 @@ function App() {
       setExamples(exampleFiles);
       setStudioWorkflows(savedWorkflowFiles);
       setModels(modelFiles);
+      setModelCatalog(catalog);
       setRecords(recordFiles);
       setNodeSmokeStatus(smokeStatus);
       setSelectedOperatorId(schema[0]?.id || "");
@@ -601,6 +628,20 @@ function App() {
     }));
   }
 
+  function updateNodeExecution(
+    nodeId: string,
+    patch: NonNullable<WorkflowNode["execution"]>,
+  ) {
+    updateWorkflowState((current) => ({
+      ...current,
+      nodes: current.nodes.map((node) =>
+        node.id === nodeId
+          ? { ...node, execution: { ...(node.execution || {}), ...patch } }
+          : node,
+      ),
+    }));
+  }
+
   function updateNodeUiConfig(operatorId: string, patch: Partial<NodeUiConfig>) {
     setNodeUiConfig((current) => {
       const existing = current[operatorId] || { defaultParams: {}, hiddenAdvanced: true };
@@ -715,6 +756,7 @@ function App() {
             onOpenWorkflowFile={openWorkflowFile}
             onValidateWorkflow={validateWorkflowByRust}
             onParamChange={updateNodeParam}
+            onExecutionChange={updateNodeExecution}
             onWorkflowChange={updateWorkflowState}
             onFlowNodesChange={updateFlowNodesState}
             onFlowEdgesChange={updateFlowEdgesState}
@@ -736,7 +778,7 @@ function App() {
           />
         </section>
         <section className={activeView === "models" ? "view active" : "view"}>
-          <ModelsPage models={models} operators={operators} />
+          <ModelsPage models={models} catalog={modelCatalog} operators={operators} />
         </section>
         <section className={activeView === "records" ? "view active" : "view"}>
           <RecordsPage records={records} runResponse={runResponse} />
@@ -807,6 +849,7 @@ function WorkflowPage(props: {
   onOpenWorkflowFile: (file: File) => void;
   onValidateWorkflow: (workflow: Workflow) => Promise<ValidateResult>;
   onParamChange: (nodeId: string, key: string, value: JsonValue) => void;
+  onExecutionChange: (nodeId: string, patch: NonNullable<WorkflowNode["execution"]>) => void;
   onWorkflowChange: React.Dispatch<React.SetStateAction<Workflow>>;
   onFlowNodesChange: React.Dispatch<React.SetStateAction<Node[]>>;
   onFlowEdgesChange: React.Dispatch<React.SetStateAction<Edge[]>>;
@@ -860,6 +903,7 @@ function WorkflowPage(props: {
           runResponse={props.runResponse}
           onClose={() => props.onInspectorOpen(false)}
           onParamChange={props.onParamChange}
+          onExecutionChange={props.onExecutionChange}
         />
       ) : (
         <button className="side-tab right-tab" onClick={() => props.onInspectorOpen(true)}>节点实例</button>
@@ -1357,13 +1401,14 @@ function WorkflowFlowNode({ data, selected }: NodeProps) {
   );
 }
 
-function NodeInspector({ workflow, node, schema, runResponse, onClose, onParamChange }: {
+function NodeInspector({ workflow, node, schema, runResponse, onClose, onParamChange, onExecutionChange }: {
   workflow: Workflow;
   node?: WorkflowNode;
   schema: OperatorSchema | null;
   runResponse: RunResponse | null;
   onClose: () => void;
   onParamChange: (nodeId: string, key: string, value: JsonValue) => void;
+  onExecutionChange: (nodeId: string, patch: NonNullable<WorkflowNode["execution"]>) => void;
 }) {
   if (!node) {
     return <section className="panel inspector"><div className="panel-header"><h2>节点实例</h2></div><div className="empty-state">当前 workflow 没有节点。</div></section>;
@@ -1393,6 +1438,30 @@ function NodeInspector({ workflow, node, schema, runResponse, onClose, onParamCh
           <h3>连接关系</h3>
           <ConnectionMini title="上游输入" items={incoming.map((edge) => `${edge.from_node}.${edge.from_port} -> ${edge.to_port}`)} />
           <ConnectionMini title="下游输出" items={outgoing.map((edge) => `${edge.from_port} -> ${edge.to_node}.${edge.to_port}`)} />
+        </div>
+        <div className="field-group">
+          <h3>执行策略</h3>
+          <div className="field">
+            <label>执行条件<span>由 Rust runtime 判定</span></label>
+            <select
+              value={node.execution?.run_when || "always"}
+              onChange={(event) => onExecutionChange(node.id, { run_when: event.target.value as NonNullable<WorkflowNode["execution"]>["run_when"] })}
+            >
+              <option value="always">始终执行</option>
+              <option value="all_ok">输入结果全部 OK</option>
+              <option value="any_ok">任一输入结果 OK</option>
+              <option value="all_ng">输入结果全部 NG</option>
+              <option value="any_ng">任一输入结果 NG</option>
+            </select>
+          </div>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={node.execution?.always_run || false} onChange={(event) => onExecutionChange(node.id, { always_run: event.target.checked })} />
+            短路后仍执行
+          </label>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={node.execution?.short_circuit_on_ng || false} onChange={(event) => onExecutionChange(node.id, { short_circuit_on_ng: event.target.checked })} />
+            本节点 NG 时触发短路
+          </label>
         </div>
         <div className="field-group">
           <h3>参数</h3>
@@ -1673,13 +1742,13 @@ function ParamSchemaRow({ param, defaultValue, onDefaultChange }: { param: Param
   );
 }
 
-function ModelsPage({ models, operators }: { models: FileEntry[]; operators: OperatorSchema[] }) {
+function ModelsPage({ models, catalog, operators }: { models: FileEntry[]; catalog: ModelCatalog | null; operators: OperatorSchema[] }) {
   const inferOps = operators.filter((operator) => ["Infer", "Ai"].includes(rootCategory(operator.category)) || operator.id.includes("yolo") || operator.id.includes("onnx"));
   return (
     <div className="page-panel">
       <div className="page-header"><div><h1>模型</h1><p>模型文件是资源，workflow 节点通过 model_path、backend、labels 等参数引用。</p></div><span className="badge">{models.length} 个 ONNX</span></div>
       <div className="schema-grid">
-        <section className="schema-panel"><h3>模型文件</h3>{models.map((model) => <div className="usage-item" key={model.path}><strong>{model.name}</strong><span>{model.path}</span></div>)}</section>
+        <section className="schema-panel"><h3>模型目录状态</h3>{Object.entries(catalog?.models || {}).map(([id, model]) => <div className="usage-item" key={id}><strong>{id} <span className={`tag ${model.status === "ready" ? "ok" : "ng"}`}>{model.status || "unknown"}</span></strong><span>{model.task || "-"} · {model.format || "-"} · {model.input_width || "-"}x{model.input_height || "-"} · {model.recommended_backend || "-"}</span><small>{model.path || ""} · SHA256 {model.sha256?.slice(0, 12) || "-"}</small></div>)}{!Object.keys(catalog?.models || {}).length ? models.map((model) => <div className="usage-item" key={model.path}><strong>{model.name}</strong><span>{model.path}</span></div>) : null}</section>
         <section className="schema-panel"><h3>可引用推理节点</h3>{inferOps.map((operator) => <div className="usage-item" key={operator.id}><strong>{operator.name}</strong><span>{operator.id}</span></div>)}</section>
       </div>
     </div>
@@ -1973,6 +2042,9 @@ function inferPortTypeName(name: string): string {
   if (["poses", "keypoints"].includes(name)) return "poses";
   if (["oriented_boxes", "obb"].includes(name)) return "oriented_boxes";
   if (name === "rules") return "rule";
+  if (name === "scale") return "scale";
+  if (name === "camera_calibration") return "camera_calibration";
+  if (name === "calibration") return "any";
   if (name === "final") return "final";
   if (name === "trigger") return "trigger";
   if (name === "capture") return "capture";
@@ -2036,11 +2108,11 @@ function SmokeDetail({ smoke, source }: { smoke?: NodeSmokeOperatorStatus; sourc
 }
 
 function clientBlocksTargetPortOccupancy(): boolean {
-  return false;
+  return true;
 }
 
 function clientBlocksPortTypeCompatibility(): boolean {
-  return false;
+  return true;
 }
 
 function validateConnection(edge: WorkflowEdge, workflow: Workflow, operators: OperatorSchema[]): ValidationIssue | null {

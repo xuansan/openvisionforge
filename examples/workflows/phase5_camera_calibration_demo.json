@@ -1,0 +1,36 @@
+{
+  "id": "phase5_camera_calibration_demo",
+  "name": "phase5_camera_calibration_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "calibrate",
+      "operator": "calibration.camera.intrinsics",
+      "params": {
+        "folder": "demo/calibration/chessboard",
+        "pattern": "chessboard",
+        "columns": 9,
+        "rows": 6,
+        "spacing_mm": 20.0,
+        "min_images": 5,
+        "max_reprojection_error": 0.0,
+        "recursive": false
+      }
+    },
+    {
+      "id": "save_calibration",
+      "operator": "calibration.camera.save",
+      "params": {
+        "path": "demo/output/phase5_camera_calibration.json"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "calibrate",
+      "from_port": "camera_calibration",
+      "to_node": "save_calibration",
+      "to_port": "camera_calibration"
+    }
+  ]
+}

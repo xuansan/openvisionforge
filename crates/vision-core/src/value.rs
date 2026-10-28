@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{ContourSet, FinalResult, LocationResult, MeasurementSet, RuleResult};
+use crate::{ContourSet, FinalResult, LocationResult, MeasurementSet, RuleResult, ScaleContext};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind", content = "data")]
@@ -16,6 +16,8 @@ pub enum Value {
     Segmentations(Vec<SegmentationMask>),
     Poses(Vec<PoseResult>),
     OrientedBoxes(Vec<OrientedBox>),
+    Scale(ScaleContext),
+    CameraCalibration(CameraCalibration),
     Rule(RuleResult),
     Rules(Vec<RuleResult>),
     Final(FinalResult),
@@ -63,6 +65,7 @@ pub struct SignalOutput {
 pub struct ImageMask {
     pub width: u32,
     pub height: u32,
+    pub source_uri: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -96,6 +99,7 @@ pub struct SegmentationMask {
     pub bbox: Rect,
     pub area_px: f64,
     pub format: String,
+    pub source_uri: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -154,6 +158,17 @@ impl Value {
             Self::Segmentations(masks) => format!("Segmentations({})", masks.len()),
             Self::Poses(poses) => format!("Poses({})", poses.len()),
             Self::OrientedBoxes(boxes) => format!("OrientedBoxes({})", boxes.len()),
+            Self::Scale(scale) => scale
+                .px_per_mm
+                .map(|value| format!("Scale({value} px/mm)"))
+                .unwrap_or_else(|| "Scale(unset)".to_string()),
+            Self::CameraCalibration(calibration) => format!(
+                "CameraCalibration({}x{}, views={}, error={:.4})",
+                calibration.image_width,
+                calibration.image_height,
+                calibration.views_used,
+                calibration.mean_reprojection_error
+            ),
             Self::Rule(rule) => format!("Rule({}={})", rule.rule_id, rule.ok),
             Self::Rules(rules) => format!("Rules({})", rules.len()),
             Self::Final(result) => format!("Final({})", result.status),
@@ -166,6 +181,26 @@ impl Value {
             Self::None => "None".to_string(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CameraCalibration {
+    pub image_width: u32,
+    pub image_height: u32,
+    pub camera_matrix: [f64; 9],
+    pub distortion_coefficients: Vec<f64>,
+    pub rms_error: f64,
+    pub mean_reprojection_error: f64,
+    pub views_used: u32,
+    pub board: CalibrationBoard,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CalibrationBoard {
+    pub pattern: String,
+    pub columns: u32,
+    pub rows: u32,
+    pub spacing_mm: f64,
 }
 
 #[cfg(test)]

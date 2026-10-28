@@ -93,6 +93,7 @@ fn morph_command(ctx: &NodeContext<'_>, op: &str) -> Result<BTreeMap<String, Val
             Value::Mask(ImageMask {
                 width: out.width,
                 height: out.height,
+                source_uri: out.source_uri.clone(),
             }),
         ),
     ]))

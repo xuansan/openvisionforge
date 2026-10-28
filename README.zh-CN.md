@@ -6,6 +6,17 @@ OpenVisionForge 是一个 **Rust-first 的开源工业视觉检测工作流平�
 
 > 当前状态：早期 MVP。核心架构已经能跑，节点体系、OpenCV bridge、ONNX/YOLO/VLM 方向、React/Tauri Studio 都已经建立，但 API、节点 schema、UI 和部署方式还会继续调整。
 
+## 当前进展（2026-10-28）
+
+- 已实现 Rust 工作流校验与执行、React/Tauri 编排、OpenCV 图像处理、标定、测量与判断闭环。
+- YOLO11 检测、分类、分割、Pose 和 OBB 已有真实 ONNX Runtime CPU 验证；不代表所有 YOLO 版本或推理后端均已验收。
+- 阶段 8 进行中：文件夹连续读图已实现，并发流式执行、视频流整合、硬件触发仍待完善。
+- 当前 OpenCV bridge 构建依赖 Windows、MSVC 和 OpenCV 5（`opencv_world500`）；跨平台仍为后续目标。
+- 仓库不包含 SDK、模型权重和本机输入图片。按 `models/registry.json` 准备权重，CPU 推理需通过 `ORT_DYLIB_PATH` 指向 ONNX Runtime 1.22.0。
+- 数据库、消息队列和存储节点中，多项目前仅生成请求或 outbox 文件，不能等同于真实 SDK 接入完成。
+
+详细状态见[项目进度](docs/项目进度.md)，本次验证见[发布检查](docs/发布检查_2026-10-28.md)。
+
 ## 项目定位
 
 工业视觉项目真正落地时，通常不只是缺一个算法。现场往往还需要：

@@ -1,0 +1,14 @@
+{
+  "id": "phase7_raw_multitask_obb",
+  "name": "phase7_raw_multitask_obb",
+  "version": "0.1.0",
+  "nodes": [
+    {"id":"read","operator":"opencv.image.read","params":{"path":"demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"}},
+    {"id":"onnx","operator":"infer.onnxruntime.run","params":{"model_path":"models/yolo11n-obb.onnx","backend":"cpu","input_width":1024,"input_height":1024,"letterbox":true}},
+    {"id":"record","operator":"record.result.json"}
+  ],
+  "edges": [
+    {"from_node":"read","from_port":"image","to_node":"onnx","to_port":"image"},
+    {"from_node":"onnx","from_port":"raw","to_node":"record","to_port":"data"}
+  ]
+}

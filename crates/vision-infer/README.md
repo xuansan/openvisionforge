@@ -33,7 +33,7 @@ Deployment backend is a node parameter, not part of the operator ID:
 ```json
 {
   "backend": "onnxruntime",
-  "model_path": "models/yolo26.onnx"
+  "model_id": "yolo11n-coco"
 }
 ```
 
@@ -81,15 +81,16 @@ infer.qwen.qwen2_5_vl.inspect
 Runnable today:
 
 ```text
-Ultralytics detect through mock backend
-Ultralytics detect through ONNX Runtime feature path, when onnxruntime.dll is available
+Ultralytics detect through ONNX Runtime CPU with real YOLO decode and NMS
+Ultralytics classification through ONNX Runtime with real score ranking
+Mock inference for workflow/UI development, explicitly marked mode=mock_backend
 Qwen VLM request-manifest nodes
 ```
 
 Reserved today:
 
 ```text
-Ultralytics segment / classify / pose / obb task contracts
+Ultralytics segment / pose / obb task contracts; synthetic outputs are disabled
 TensorRT / RKNN / Sophon backend slots
 Qwen real HTTP execution
 ```
@@ -107,6 +108,7 @@ nodes/ultralytics/detect_pipeline.rs
 backend/
   Deployment backend surfaces.
   onnxruntime is feature-gated and uses the `ort` crate.
+  Sessions are cached by canonical model path and backend.
   tensorrt / rknn / sophon are reserved for later SDK integration.
 
 preprocess.rs
@@ -115,6 +117,10 @@ preprocess.rs
 decode/
   Task-specific postprocess.
   yolo.rs decodes tensor output into `vision_core::Detection`.
+  classification.rs ranks real classification scores.
+
+model_assets.rs
+  Resolves model_path directly or model_id through models/registry.json.
 
 schema.rs
   Shared helpers for node parameter schemas.
@@ -146,7 +152,7 @@ cargo run -p vision-cli -- export-schema
 Current dependency:
 
 ```toml
-ort = { version = "2.0.0-rc.4", optional = true, default-features = false, features = ["ndarray", "load-dynamic"] }
+ort = { version = "=2.0.0-rc.10", optional = true, default-features = false, features = ["ndarray", "load-dynamic"] }
 ```
 
 The `load-dynamic` feature means real ONNX Runtime execution loads:
@@ -160,7 +166,7 @@ at runtime.
 Typical setup on Windows:
 
 ```powershell
-$env:ORT_DYLIB_PATH="C:\path\to\onnxruntime.dll"
+$env:ORT_DYLIB_PATH="vendor\onnxruntime\1.22.0-win-x64\onnxruntime.dll"
 ```
 
 or add the DLL directory to `PATH`.
@@ -174,21 +180,29 @@ cargo check -p vision-cli --features vision-infer/onnxruntime-cpu
 Run with real ONNX Runtime:
 
 ```powershell
-cargo run -p vision-cli --features vision-infer/onnxruntime-cpu -- run examples/workflows/yolo_onnxruntime_person_demo.json
+cargo run -p vision-cli --features vision-infer/onnxruntime-cpu -- run examples/workflows/phase7_yolo11_detection_demo.json
 ```
 
-Without the ONNX Runtime feature, workflows use the mock backend so the rest of
-the platform can be developed without installing the runtime DLL.
+The raw output includes preprocessing, inference, postprocessing and total
+timings plus `session.cache_hit` and model load time. CUDA requires both the
+`vision-infer/onnxruntime-cuda` feature and a CUDA-enabled ONNX Runtime binary.
+
+The checked-in model catalog uses Ultralytics YOLO11n opset 22, so the current
+runtime pair is `ort 2.0.0-rc.10` with ONNX Runtime 1.22.x.
+
+Without the ONNX Runtime feature, `cpu`, `cuda`, and `onnxruntime` fail with a
+clear configuration error. Mock output is available only when the workflow
+explicitly selects `backend=mock`; real backends never silently fall back.
 
 ## Next Work
 
 Near-term work should stay light:
 
 ```text
-1. Let the UI consume `vision-cli export-schema` for the node library and config panels.
-2. Run a real ONNX Runtime YOLO demo with a known model and DLL.
-3. Add annotated image output for detections as a reusable record/render node.
-4. Add light model presets later; do not force a heavy model registry yet.
+1. Implement and validate real segmentation mask decode and mask artifacts.
+2. Implement and validate real pose and OBB decoders with task-specific models.
+3. Validate the CUDA execution provider on an NVIDIA deployment environment.
+4. Add session cache sizing/eviction for long-running multi-model deployments.
 5. Add real Qwen VLM HTTP execution after the local detect loop is stable.
 ```
 

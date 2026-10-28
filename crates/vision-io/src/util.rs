@@ -25,10 +25,17 @@ pub(crate) fn input_json(ctx: &NodeContext<'_>) -> serde_json::Value {
 pub(crate) fn payload(ctx: &NodeContext<'_>) -> serde_json::Value {
     ctx.inputs
         .get("payload")
+        .or_else(|| ctx.inputs.get("result"))
+        .or_else(|| ctx.inputs.get("final"))
         .or_else(|| ctx.inputs.get("data"))
         .or_else(|| ctx.inputs.get("stats"))
-        .cloned()
-        .map(|value| serde_json::to_value(value).unwrap_or_else(|_| serde_json::json!(null)))
+        .map(|value| match value {
+            Value::Json(json) => json.clone(),
+            Value::Final(result) => {
+                serde_json::to_value(result).unwrap_or_else(|_| serde_json::json!(null))
+            }
+            other => serde_json::to_value(other).unwrap_or_else(|_| serde_json::json!(null)),
+        })
         .unwrap_or_else(|| input_json(ctx))
 }
 

@@ -13,6 +13,14 @@ static std::vector<std::string> split_line_tab(const std::string& line) {
     return parts;
 }
 
+static std::vector<std::string> split_delim(const std::string& line, char delimiter) {
+    std::vector<std::string> parts;
+    std::stringstream stream(line);
+    std::string item;
+    while (std::getline(stream, item, delimiter)) parts.push_back(item);
+    return parts;
+}
+
 static int to_int(const std::string& value) {
     return static_cast<int>(std::round(std::stod(value)));
 }
@@ -73,6 +81,36 @@ static std::string op_draw(const std::vector<std::string>& args) {
                 label += " " + parts[6];
             }
             put_label(out, label, x, y, font_scale, thickness, green);
+        } else if (parts[0] == "mask" && parts.size() >= 3) {
+            cv::Mat mask = cv::imread(parts[1], cv::IMREAD_GRAYSCALE);
+            if (!mask.empty() && mask.size() == out.size()) {
+                cv::Mat color(out.size(), out.type(), cv::Scalar(40, 190, 80));
+                cv::Mat blended;
+                cv::addWeighted(out, 0.65, color, 0.35, 0.0, blended);
+                blended.copyTo(out, mask);
+            }
+        } else if (parts[0] == "keypoints" && parts.size() >= 2) {
+            auto points = split_delim(parts[1], ';');
+            for (const auto& point : points) {
+                std::stringstream stream(point);
+                std::string x_text, y_text, score_text;
+                std::getline(stream, x_text, ',');
+                std::getline(stream, y_text, ',');
+                std::getline(stream, score_text, ',');
+                if (score_text.empty() || std::stod(score_text) < 0.2) continue;
+                cv::circle(out, cv::Point(to_int(x_text), to_int(y_text)), 4, amber, cv::FILLED, cv::LINE_AA);
+            }
+        } else if (parts[0] == "obb" && parts.size() >= 8) {
+            double cx = std::stod(parts[1]);
+            double cy = std::stod(parts[2]);
+            double width = std::stod(parts[3]);
+            double height = std::stod(parts[4]);
+            double angle = std::stod(parts[5]);
+            cv::RotatedRect rotated(cv::Point2f(static_cast<float>(cx), static_cast<float>(cy)), cv::Size2f(static_cast<float>(width), static_cast<float>(height)), static_cast<float>(angle));
+            cv::Point2f corners[4];
+            rotated.points(corners);
+            for (int i = 0; i < 4; ++i) cv::line(out, corners[i], corners[(i + 1) % 4], amber, thickness, cv::LINE_AA);
+            put_label(out, parts[6] + " " + parts[7], static_cast<int>(cx - width / 2.0), static_cast<int>(cy - height / 2.0), font_scale, thickness, amber);
         } else if (parts[0] == "contour" && parts.size() >= 8) {
             int x = to_int(parts[1]);
             int y = to_int(parts[2]);

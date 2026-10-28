@@ -8,7 +8,7 @@ pub(crate) fn register(registry: &mut OperatorRegistry) {
         "db.mysql.insert",
         "MySQL Insert",
         &[],
-        &["payload", "data", "stats"],
+        &["payload", "result", "final", "data", "stats"],
         mysql_insert,
     );
 }

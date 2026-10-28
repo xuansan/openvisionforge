@@ -1,0 +1,106 @@
+{
+  "id": "phase4_measure_judge_demo",
+  "name": "phase4_measure_judge_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray",
+      "params": {}
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.fixed",
+      "params": {
+        "threshold": 128,
+        "max_value": 255
+      }
+    },
+    {
+      "id": "ratio",
+      "operator": "opencv.measure.binary_ratio",
+      "params": {}
+    },
+    {
+      "id": "scale",
+      "operator": "measure.scale.manual",
+      "params": {
+        "px_per_mm": 20,
+        "unit": "mm"
+      }
+    },
+    {
+      "id": "convert",
+      "operator": "measure.units.convert",
+      "params": {}
+    },
+    {
+      "id": "ratio_rule",
+      "operator": "rule.numeric_range",
+      "params": {
+        "rule_id": "binary_white_ratio",
+        "field": "white_ratio",
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "final",
+      "operator": "logic.final_result",
+      "params": {
+        "rule_id": "phase4_final"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "ratio",
+      "to_port": "image"
+    },
+    {
+      "from_node": "ratio",
+      "from_port": "stats",
+      "to_node": "convert",
+      "to_port": "data"
+    },
+    {
+      "from_node": "scale",
+      "from_port": "scale",
+      "to_node": "convert",
+      "to_port": "scale"
+    },
+    {
+      "from_node": "convert",
+      "from_port": "data",
+      "to_node": "ratio_rule",
+      "to_port": "data"
+    },
+    {
+      "from_node": "ratio_rule",
+      "from_port": "rule",
+      "to_node": "final",
+      "to_port": "rule"
+    }
+  ]
+}

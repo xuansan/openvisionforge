@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
 
-use crate::{dag::topo_order, OperatorRegistry, ParamKind, Workflow};
+use crate::{dag::topo_order, OperatorRegistry, ParamKind, RunCondition, Workflow};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -18,6 +18,8 @@ pub enum PortValueType {
     Segmentations,
     Poses,
     OrientedBoxes,
+    Scale,
+    CameraCalibration,
     Rule,
     Final,
     Trigger,
@@ -106,6 +108,25 @@ pub fn validate_workflow(workflow: &Workflow, registry: &OperatorRegistry) -> Va
                 None,
             ));
         }
+    }
+
+    let final_nodes = workflow
+        .nodes
+        .iter()
+        .filter(|node| node.operator == "logic.final_result")
+        .map(|node| node.id.as_str())
+        .collect::<Vec<_>>();
+    if final_nodes.len() > 1 {
+        report.push(error(
+            "multiple_final_results",
+            format!(
+                "workflow must contain at most one logic.final_result node, found {:?}",
+                final_nodes
+            ),
+            None,
+            None,
+            None,
+        ));
     }
 
     let mut edge_keys = BTreeSet::new();
@@ -226,6 +247,45 @@ pub fn validate_workflow(workflow: &Workflow, registry: &OperatorRegistry) -> Va
             }
         }
 
+        if node.execution.run_when != RunCondition::Always {
+            let has_decision_input = workflow
+                .edges
+                .iter()
+                .filter(|edge| edge.to_node == node.id)
+                .map(|edge| infer_port_type(&edge.from_port))
+                .any(is_decision_type);
+            if !has_decision_input {
+                report.push(error(
+                    "execution_condition_without_decision",
+                    format!(
+                        "{} execution condition requires a rule, final or bool input",
+                        node.id
+                    ),
+                    Some(node.id.clone()),
+                    None,
+                    None,
+                ));
+            }
+        }
+        if node.execution.short_circuit_on_ng
+            && !schema
+                .outputs
+                .iter()
+                .map(|port| infer_port_type(port))
+                .any(is_decision_type)
+        {
+            report.push(error(
+                "short_circuit_without_decision",
+                format!(
+                    "{} cannot short-circuit because it has no decision output",
+                    node.id
+                ),
+                Some(node.id.clone()),
+                None,
+                None,
+            ));
+        }
+
         for param in schema.params.iter().filter(|param| param.required) {
             let missing = node
                 .params
@@ -334,6 +394,9 @@ pub fn infer_port_type(name: &str) -> PortValueType {
         "poses" | "keypoints" => PortValueType::Poses,
         "oriented_boxes" | "obb" => PortValueType::OrientedBoxes,
         "rules" => PortValueType::Rule,
+        "scale" => PortValueType::Scale,
+        "camera_calibration" => PortValueType::CameraCalibration,
+        "calibration" => PortValueType::Any,
         "final" => PortValueType::Final,
         "trigger" => PortValueType::Trigger,
         "capture" => PortValueType::Capture,
@@ -348,6 +411,13 @@ pub fn infer_port_type(name: &str) -> PortValueType {
 
 fn types_compatible(output: PortValueType, input: PortValueType) -> bool {
     output == input || output == PortValueType::Any || input == PortValueType::Any
+}
+
+fn is_decision_type(value_type: PortValueType) -> bool {
+    matches!(
+        value_type,
+        PortValueType::Rule | PortValueType::Final | PortValueType::Bool
+    )
 }
 
 fn param_value_compatible(kind: ParamKind, value: &serde_json::Value) -> bool {

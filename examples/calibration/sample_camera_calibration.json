@@ -1,0 +1,25 @@
+{
+  "image_width": 960,
+  "image_height": 1280,
+  "camera_matrix": [
+    1000.0,
+    0.0,
+    480.0,
+    0.0,
+    1000.0,
+    640.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "distortion_coefficients": [0.0, 0.0, 0.0, 0.0, 0.0],
+  "rms_error": 0.0,
+  "mean_reprojection_error": 0.0,
+  "views_used": 1,
+  "board": {
+    "pattern": "sample",
+    "columns": 9,
+    "rows": 6,
+    "spacing_mm": 20.0
+  }
+}

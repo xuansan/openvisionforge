@@ -11,6 +11,8 @@ pub fn register_all(registry: &mut OperatorRegistry) {
     ops::filter::register(registry);
     ops::enhance::register(registry);
     ops::morph::register(registry);
+    ops::roi::register(registry);
+    ops::calibration::register(registry);
     ops::analysis::register(registry);
     ops::geometry::register(registry);
     ops::location::register(registry);
@@ -18,4 +20,5 @@ pub fn register_all(registry: &mut OperatorRegistry) {
     ops::transform::register(registry);
     ops::edge::register(registry);
     ops::draw::register(registry);
+    ops::video::register(registry);
 }

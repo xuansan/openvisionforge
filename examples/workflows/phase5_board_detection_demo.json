@@ -1,0 +1,51 @@
+{
+  "id": "phase5_board_detection_demo",
+  "name": "phase5_board_detection_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read_chessboard",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/calibration/chessboard/chessboard_01.png"
+      }
+    },
+    {
+      "id": "detect_chessboard",
+      "operator": "calibration.board.chessboard_detect",
+      "params": {
+        "columns": 9,
+        "rows": 6
+      }
+    },
+    {
+      "id": "read_circle_grid",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/calibration/circle_grid/circle_grid.png"
+      }
+    },
+    {
+      "id": "detect_circle_grid",
+      "operator": "calibration.board.circle_grid_detect",
+      "params": {
+        "columns": 9,
+        "rows": 6
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read_chessboard",
+      "from_port": "image",
+      "to_node": "detect_chessboard",
+      "to_port": "image"
+    },
+    {
+      "from_node": "read_circle_grid",
+      "from_port": "image",
+      "to_node": "detect_circle_grid",
+      "to_port": "image"
+    }
+  ]
+}

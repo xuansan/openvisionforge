@@ -1,5 +1,8 @@
 use vision_core::{port_schema, OperatorRegistry, OperatorSchema};
 
+pub mod stream;
+pub use stream::{BoundedFrameQueue, FolderFrameSource, StreamExecutor};
+
 pub fn registry() -> OperatorRegistry {
     let mut registry = OperatorRegistry::new();
     vision_operators::register_all(&mut registry);

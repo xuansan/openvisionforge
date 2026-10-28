@@ -1,6 +1,7 @@
 #include "bridge_common.hpp"
 
 #include "color_ops.cpp"
+#include "calibration_ops.cpp"
 #include "draw_ops.cpp"
 #include "edge_ops.cpp"
 #include "enhance_ops.cpp"
@@ -10,6 +11,7 @@
 #include "morph_ops.cpp"
 #include "threshold_ops.cpp"
 #include "transform_ops.cpp"
+#include "video_ops.cpp"
 
 static std::string dispatch(const std::vector<std::string>& args) {
     if (args.empty()) {
@@ -20,11 +22,23 @@ static std::string dispatch(const std::vector<std::string>& args) {
     if (command == "metadata") {
         return op_metadata(args);
     }
+    if (command == "calibration_detect") {
+        return op_calibration_detect(args);
+    }
+    if (command == "calibrate_folder") {
+        return op_calibrate_folder(args);
+    }
+    if (command == "undistort") {
+        return op_undistort(args);
+    }
     if (command == "resize") {
         return op_resize(args);
     }
     if (command == "crop") {
         return op_crop(args);
+    }
+    if (command == "roi_mask") {
+        return op_roi_mask(args);
     }
     if (command == "gray") {
         return op_gray(args);
@@ -88,6 +102,9 @@ static std::string dispatch(const std::vector<std::string>& args) {
     }
     if (command == "write") {
         return op_write(args);
+    }
+    if (command == "video_frame") {
+        return op_video_frame(args);
     }
 
     fail("unknown command: " + command);

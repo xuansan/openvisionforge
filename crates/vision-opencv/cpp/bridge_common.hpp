@@ -1,10 +1,13 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/calib.hpp>
 #include <opencv2/geometry/2d.hpp>
+#include <opencv2/geometry/3d.hpp>
 #include <opencv2/imgproc.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <sstream>

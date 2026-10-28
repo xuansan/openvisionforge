@@ -1,4 +1,5 @@
 pub(crate) mod analysis;
+pub(crate) mod calibration;
 pub(crate) mod color;
 pub(crate) mod draw;
 pub(crate) mod edge;
@@ -9,5 +10,7 @@ pub(crate) mod image;
 pub(crate) mod location;
 pub(crate) mod measure;
 pub(crate) mod morph;
+pub(crate) mod roi;
 pub(crate) mod threshold;
 pub(crate) mod transform;
+pub(crate) mod video;

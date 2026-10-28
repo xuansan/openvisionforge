@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+mod measurement;
 mod recipe;
 mod rules;
 mod schema;
@@ -11,6 +12,7 @@ use vision_core::{
 
 pub fn register_all(registry: &mut OperatorRegistry) {
     recipe::register(registry);
+    measurement::register(registry);
     rules::register(registry);
     registry.register(schema(
         "source.image.file.mock",
@@ -262,6 +264,7 @@ fn threshold(ctx: &NodeContext<'_>) -> Result<BTreeMap<String, Value>> {
         Value::Mask(ImageMask {
             width: image.width,
             height: image.height,
+            source_uri: None,
         }),
     ))
 }

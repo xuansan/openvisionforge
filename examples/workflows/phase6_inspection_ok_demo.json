@@ -1,0 +1,43 @@
+{
+  "id": "phase6_inspection_ok_demo",
+  "name": "phase6_inspection_ok_demo",
+  "version": "0.1.0",
+  "metadata": {
+    "product_id": "demo-part-001",
+    "batch_id": "demo-batch",
+    "model_version": "none",
+    "calibration_version": "phase5-sample"
+  },
+  "nodes": [
+    {"id":"read","operator":"opencv.image.read","params":{"path":"demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"}},
+    {"id":"gray","operator":"opencv.color.to_gray","params":{}},
+    {"id":"threshold","operator":"opencv.threshold.fixed","params":{"threshold":128,"max_value":255}},
+    {"id":"contours","operator":"opencv.analysis.find_contours","params":{"min_area":100,"max_contours":20}},
+    {"id":"draw","operator":"opencv.draw.contours","params":{"thickness":2,"font_scale":0.6}},
+    {"id":"save_image","operator":"opencv.image.write","params":{"output":"demo/output/phase6_ok_annotated.png"}},
+    {"id":"measurement","operator":"opencv.measure.point_distance","params":{"x1":0,"y1":0,"x2":200,"y2":0}},
+    {"id":"rule_tight","operator":"rule.numeric_range","params":{"rule_id":"distance_tight","field":"point_distance","min":190,"max":210}},
+    {"id":"rule_broad","operator":"rule.numeric_range","params":{"rule_id":"distance_broad","field":"point_distance","min":150,"max":250}},
+    {"id":"combine","operator":"logic.n_of_m","params":{"rule_id":"distance_vote","required_passes":2}},
+    {"id":"final","operator":"logic.final_result","params":{"rule_id":"inspection_final"},"execution":{"always_run":true}},
+    {"id":"record","operator":"record.result.json","params":{"output":"demo/output/phase6_ok_result.json","product_id":"demo-part-001","batch_id":"demo-batch","calibration_version":"phase5-sample"},"execution":{"always_run":true}},
+    {"id":"webhook","operator":"comm.webhook.send","params":{"mode":"outbox","url":"http://localhost/webhook","outbox":"demo/output/phase6_ok_webhook_outbox.json"},"execution":{"always_run":true}}
+  ],
+  "edges": [
+    {"from_node":"read","from_port":"image","to_node":"gray","to_port":"image"},
+    {"from_node":"gray","from_port":"image","to_node":"threshold","to_port":"image"},
+    {"from_node":"threshold","from_port":"image","to_node":"contours","to_port":"image"},
+    {"from_node":"read","from_port":"image","to_node":"draw","to_port":"image"},
+    {"from_node":"contours","from_port":"contours","to_node":"draw","to_port":"contours"},
+    {"from_node":"draw","from_port":"image","to_node":"save_image","to_port":"image"},
+    {"from_node":"measurement","from_port":"measurements","to_node":"rule_tight","to_port":"data"},
+    {"from_node":"measurement","from_port":"measurements","to_node":"rule_broad","to_port":"data"},
+    {"from_node":"rule_tight","from_port":"rule","to_node":"combine","to_port":"rule"},
+    {"from_node":"rule_broad","from_port":"rule","to_node":"combine","to_port":"rule2"},
+    {"from_node":"combine","from_port":"rule","to_node":"final","to_port":"rule"},
+    {"from_node":"final","from_port":"final","to_node":"record","to_port":"final"},
+    {"from_node":"measurement","from_port":"measurements","to_node":"record","to_port":"measurements"},
+    {"from_node":"draw","from_port":"image","to_node":"record","to_port":"annotated"},
+    {"from_node":"record","from_port":"result","to_node":"webhook","to_port":"result"}
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "phase7_session_cache_demo",
+  "name": "phase7_session_cache_demo",
+  "version": "0.1.0",
+  "metadata": {
+    "model_id": "yolo11n-coco",
+    "purpose": "verify in-process ONNX Runtime session reuse"
+  },
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {"path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"}
+    },
+    {
+      "id": "detect_cold",
+      "operator": "infer.ultralytics.yolo11.detect",
+      "params": {"model_id": "yolo11n-coco", "backend": "cpu", "score_threshold": 0.25}
+    },
+    {
+      "id": "detect_warm",
+      "operator": "infer.ultralytics.yolo11.detect",
+      "params": {"model_id": "yolo11n-coco", "backend": "cpu", "score_threshold": 0.25}
+    },
+    {
+      "id": "record_cold",
+      "operator": "record.result.json",
+      "params": {"output": "demo/output/phase7_session_cold.json"}
+    },
+    {
+      "id": "record_warm",
+      "operator": "record.result.json",
+      "params": {"output": "demo/output/phase7_session_warm.json"}
+    }
+  ],
+  "edges": [
+    {"from_node": "read", "from_port": "image", "to_node": "detect_cold", "to_port": "image"},
+    {"from_node": "read", "from_port": "image", "to_node": "detect_warm", "to_port": "image"},
+    {"from_node": "detect_cold", "from_port": "raw", "to_node": "record_cold", "to_port": "payload"},
+    {"from_node": "detect_warm", "from_port": "raw", "to_node": "record_warm", "to_port": "payload"}
+  ]
+}

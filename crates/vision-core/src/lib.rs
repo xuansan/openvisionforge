@@ -5,6 +5,7 @@ pub mod model;
 pub mod operator;
 pub mod quality;
 pub mod registry;
+pub mod stream;
 pub mod trace;
 pub mod validation;
 pub mod value;
@@ -16,6 +17,7 @@ pub use model::*;
 pub use operator::{OperatorFn, OperatorSchema, ParamKind, ParamSchema};
 pub use quality::*;
 pub use registry::OperatorRegistry;
+pub use stream::*;
 pub use trace::{NodeTrace, PortTrace, ProcessingMetrics, RunEvent, RunMetrics, RunTrace};
 pub use validation::{
     port_schema, validate_workflow, PortSchema, PortValueType, ValidationIssue, ValidationLevel,

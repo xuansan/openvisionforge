@@ -6,13 +6,14 @@ build = "build.rs"
 
 [dependencies]
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "bmp"] }
-ort = { version = "2.0.0-rc.4", optional = true, default-features = false, features = ["ndarray", "load-dynamic"] }
+ort = { version = "=2.0.0-rc.10", optional = true, default-features = false, features = ["ndarray", "load-dynamic"] }
 serde_json.workspace = true
+sha2 = "0.10"
 vision-core.workspace = true
 
 [features]
 default = []
 onnxruntime = ["dep:ort"]
 onnxruntime-cpu = ["onnxruntime"]
-onnxruntime-cuda = ["onnxruntime"]
+onnxruntime-cuda = ["onnxruntime", "ort/cuda"]
 tensorrt = []

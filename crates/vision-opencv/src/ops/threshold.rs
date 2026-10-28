@@ -204,6 +204,7 @@ fn threshold_command(
             Value::Mask(ImageMask {
                 width: binary.width,
                 height: binary.height,
+                source_uri: binary.source_uri.clone(),
             }),
         ),
     ]))

@@ -8,6 +8,17 @@ OpenVisionForge 是一个面向工业视觉检测的开源项目。它不是单�
 
 > Current status: early MVP. The architecture is already usable, but APIs, node schemas, UI layout, and deployment packaging may still change.
 
+## Status (2026-10-28)
+
+- Rust workflow validation/execution, React/Tauri editing, OpenCV processing, calibration and judgement workflows are implemented.
+- YOLO11 detection, classification, segmentation, pose and OBB have previously passed real ONNX Runtime CPU workflows. This does not imply every YOLO version/backend is validated.
+- Stage 8 is in progress: folder image execution is implemented; concurrent streaming, video integration and hardware triggers remain unfinished.
+- The current OpenCV bridge build requires Windows, MSVC and OpenCV 5 (`opencv_world500`). Cross-platform support is a goal.
+- SDKs, model weights and local input images are excluded. Prepare weights using `models/registry.json` and set `ORT_DYLIB_PATH` to ONNX Runtime 1.22.0 when enabling the CPU backend.
+- Many database/message/storage nodes currently produce requests or outbox files; they do not imply a verified live SDK connection.
+
+See [project progress](docs/项目进度.md) and [publication checks](docs/发布检查_2026-10-28.md) for scope and verification details.
+
 ## Why OpenVisionForge
 
 工业视觉项目通常不只缺一个算法。真正落地时还需要：

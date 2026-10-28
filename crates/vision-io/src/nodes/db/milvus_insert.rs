@@ -8,7 +8,7 @@ pub(crate) fn register(registry: &mut OperatorRegistry) {
         "db.milvus.insert",
         "Milvus Insert",
         &[],
-        &["payload", "data", "stats", "embedding"],
+        &["payload", "result", "final", "data", "stats", "embedding"],
         milvus_insert,
     );
 }

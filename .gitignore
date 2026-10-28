@@ -15,6 +15,9 @@ apps/vision-studio/src-tauri/target/
 # Local models and SDKs
 /models/*
 !/models/.gitkeep
+!/models/registry.json
+!/models/coco80.json
+!/models/dota15.json
 /vendor/
 
 # Local binaries and generated artifacts
@@ -30,3 +33,6 @@ Thumbs.db
 *.log
 test
 tauri_crate_download_links.txt
+.env
+.env.*
+!.env.example

@@ -8,6 +8,7 @@ fn main() {
     println!("cargo:rerun-if-changed=cpp/opencv_bridge.cpp");
     println!("cargo:rerun-if-changed=cpp/bridge_common.hpp");
     println!("cargo:rerun-if-changed=cpp/color_ops.cpp");
+    println!("cargo:rerun-if-changed=cpp/calibration_ops.cpp");
     println!("cargo:rerun-if-changed=cpp/draw_ops.cpp");
     println!("cargo:rerun-if-changed=cpp/edge_ops.cpp");
     println!("cargo:rerun-if-changed=cpp/enhance_ops.cpp");
@@ -17,6 +18,7 @@ fn main() {
     println!("cargo:rerun-if-changed=cpp/morph_ops.cpp");
     println!("cargo:rerun-if-changed=cpp/threshold_ops.cpp");
     println!("cargo:rerun-if-changed=cpp/transform_ops.cpp");
+    println!("cargo:rerun-if-changed=cpp/video_ops.cpp");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is set"));
     let exe = out_dir.join("opencv_bridge.exe");

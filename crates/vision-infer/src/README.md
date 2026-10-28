@@ -53,8 +53,8 @@ nodes/ultralytics/
   infer.ultralytics.yolov8.obb
 
   Model ecosystem nodes. The detect task is runnable through the shared ONNX/mock
-  path. Segment/classify/pose/obb are registered as reserved node contracts, so
-  workflow/UI can expose them before their task-specific postprocess is implemented.
+  path. Classification has real tensor ranking. Segment/pose/obb remain reserved
+  contracts and return explicit errors until task-specific decoders are implemented.
 
 nodes/qwen/
   infer.qwen.qwen3_vl.describe

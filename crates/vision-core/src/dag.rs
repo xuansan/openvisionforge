@@ -56,6 +56,7 @@ mod tests {
             id: "w".to_string(),
             name: "w".to_string(),
             version: "0".to_string(),
+            metadata: Default::default(),
             nodes: vec![node("a"), node("b")],
             edges: vec![WorkflowEdge {
                 from_node: "a".to_string(),
@@ -73,6 +74,7 @@ mod tests {
             id: id.to_string(),
             operator: "mock".to_string(),
             params: serde_json::Value::Null,
+            execution: Default::default(),
         }
     }
 }

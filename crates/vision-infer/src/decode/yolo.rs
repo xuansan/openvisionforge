@@ -1,4 +1,4 @@
-use vision_core::{Detection, ImageFrame, Rect};
+use vision_core::{Detection, ImageFrame, Rect, Result, VisionError};
 
 use crate::backend::onnx::OnnxRunOutput;
 
@@ -7,19 +7,37 @@ pub(crate) struct YoloDecodeConfig {
     pub score_threshold: f64,
     pub nms_threshold: f64,
     pub labels: Vec<String>,
+    pub format: YoloDecodeFormat,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum YoloDecodeFormat {
+    Auto,
+    Ultralytics,
+    UltralyticsObjectness,
+}
+
+impl YoloDecodeFormat {
+    pub(crate) fn from_param(value: &str) -> Self {
+        match value {
+            "ultralytics" => Self::Ultralytics,
+            "ultralytics_objectness" => Self::UltralyticsObjectness,
+            _ => Self::Auto,
+        }
+    }
 }
 
 pub(crate) fn decode(
     output: &OnnxRunOutput,
     image: &ImageFrame,
     config: &YoloDecodeConfig,
-) -> Vec<Detection> {
+) -> Result<Vec<Detection>> {
     let Some(tensor) = output.tensors.first() else {
-        return Vec::new();
+        return Err(decode_error("model produced no output tensors"));
     };
-    let mut detections = decode_tensor(tensor, image, output, config);
+    let mut detections = decode_tensor(tensor, image, output, config)?;
     detections.sort_by(|a, b| b.score.total_cmp(&a.score));
-    nms(detections, config.nms_threshold)
+    Ok(nms(detections, config.nms_threshold))
 }
 
 fn decode_tensor(
@@ -27,26 +45,36 @@ fn decode_tensor(
     image: &ImageFrame,
     output: &OnnxRunOutput,
     config: &YoloDecodeConfig,
-) -> Vec<Detection> {
+) -> Result<Vec<Detection>> {
     if tensor.shape.len() == 3 {
         let a = tensor.shape[1].max(0) as usize;
         let b = tensor.shape[2].max(0) as usize;
         if a >= 5 && b > a {
-            return decode_rows_transposed(&tensor.data, a, b, image, output, config);
+            return Ok(decode_rows_transposed(
+                &tensor.data,
+                a,
+                b,
+                image,
+                output,
+                config,
+            ));
         }
-        return decode_rows(&tensor.data, a, b, image, output, config);
+        return Ok(decode_rows(&tensor.data, a, b, image, output, config));
     }
     if tensor.shape.len() == 2 {
-        return decode_rows(
+        return Ok(decode_rows(
             &tensor.data,
             tensor.shape[0].max(0) as usize,
             tensor.shape[1].max(0) as usize,
             image,
             output,
             config,
-        );
+        ));
     }
-    Vec::new()
+    Err(decode_error(format!(
+        "unsupported YOLO detection output shape {:?}; expected [1, attributes, predictions], [1, predictions, attributes], or [predictions, attributes]",
+        tensor.shape
+    )))
 }
 
 fn decode_rows(
@@ -62,7 +90,13 @@ fn decode_rows(
     }
     (0..rows)
         .filter_map(|row| {
-            decode_prediction(&data[row * cols..row * cols + cols], image, output, config)
+            decode_prediction(
+                &data[row * cols..row * cols + cols],
+                image,
+                output,
+                config,
+                cols == 6,
+            )
         })
         .collect()
 }
@@ -84,7 +118,7 @@ fn decode_rows_transposed(
         for attr in 0..attrs {
             row[attr] = data[attr * rows + item];
         }
-        if let Some(detection) = decode_prediction(&row, image, output, config) {
+        if let Some(detection) = decode_prediction(&row, image, output, config, false) {
             detections.push(detection);
         }
     }
@@ -96,8 +130,9 @@ fn decode_prediction(
     image: &ImageFrame,
     output: &OnnxRunOutput,
     config: &YoloDecodeConfig,
+    postprocessed_xyxy: bool,
 ) -> Option<Detection> {
-    let (x, y, w, h, score, class_index, xyxy) = if row.len() == 6 {
+    let (x, y, w, h, score, class_index, xyxy) = if postprocessed_xyxy {
         (
             row[0] as f64,
             row[1] as f64,
@@ -108,7 +143,19 @@ fn decode_prediction(
             true,
         )
     } else {
-        let class_offset = if row.len() > 84 { 5 } else { 4 };
+        let class_offset = match config.format {
+            YoloDecodeFormat::Ultralytics => 4,
+            YoloDecodeFormat::UltralyticsObjectness => 5,
+            YoloDecodeFormat::Auto
+                if !config.labels.is_empty() && row.len() == config.labels.len() + 5 =>
+            {
+                5
+            }
+            YoloDecodeFormat::Auto => 4,
+        };
+        if row.len() <= class_offset {
+            return None;
+        }
         let (class_index, class_score) = row[class_offset..]
             .iter()
             .enumerate()
@@ -163,16 +210,27 @@ fn decode_prediction(
         .get(class_index)
         .cloned()
         .unwrap_or_else(|| format!("class_{class_index}"));
+    let x1 = x1.clamp(0.0, image_width);
+    let y1 = y1.clamp(0.0, image_height);
+    let x2 = x2.clamp(x1, image_width);
+    let y2 = y2.clamp(y1, image_height);
     Some(Detection {
         label,
         score,
         bbox: Rect {
-            x: x1.clamp(0.0, image_width),
-            y: y1.clamp(0.0, image_height),
-            width: (x2 - x1).max(0.0).min(image_width),
-            height: (y2 - y1).max(0.0).min(image_height),
+            x: x1,
+            y: y1,
+            width: x2 - x1,
+            height: y2 - y1,
         },
     })
+}
+
+fn decode_error(message: impl Into<String>) -> VisionError {
+    VisionError::Operator {
+        node: "infer.yolo.decode".to_string(),
+        message: message.into(),
+    }
 }
 
 fn cxcywh_to_xyxy(cx: f64, cy: f64, w: f64, h: f64) -> (f64, f64, f64, f64) {
@@ -242,5 +300,86 @@ fn iou(a: &Rect, b: &Rect) -> f64 {
         0.0
     } else {
         intersection / union
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backend::onnx::{OnnxRunOutput, TensorOutput};
+
+    fn image() -> ImageFrame {
+        ImageFrame {
+            width: 640,
+            height: 480,
+            channels: 3,
+            pixel_format: "RGB8".to_string(),
+            source_uri: None,
+        }
+    }
+
+    fn output(shape: Vec<i64>, data: Vec<f32>) -> OnnxRunOutput {
+        OnnxRunOutput {
+            tensors: vec![TensorOutput {
+                name: "output0".to_string(),
+                shape,
+                data,
+            }],
+            metadata: serde_json::json!({
+                "preprocess": {"scale": 1.0, "pad_x": 0.0, "pad_y": 80.0}
+            }),
+        }
+    }
+
+    fn config() -> YoloDecodeConfig {
+        YoloDecodeConfig {
+            score_threshold: 0.25,
+            nms_threshold: 0.45,
+            labels: vec!["part".to_string(), "defect".to_string()],
+            format: YoloDecodeFormat::Auto,
+        }
+    }
+
+    #[test]
+    fn decodes_transposed_ultralytics_output_and_restores_letterbox() {
+        let mut data = vec![0.0; 6 * 7];
+        data[0] = 320.0;
+        data[7] = 320.0;
+        data[14] = 200.0;
+        data[21] = 100.0;
+        data[28] = 0.9;
+        data[35] = 0.1;
+        let tensor = output(vec![1, 6, 7], data);
+        let detections = decode(&tensor, &image(), &config()).unwrap();
+        assert_eq!(detections.len(), 1);
+        assert_eq!(detections[0].label, "part");
+        assert!((detections[0].bbox.y - 190.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn suppresses_overlapping_boxes_of_the_same_class() {
+        let tensor = output(
+            vec![2, 6],
+            vec![
+                10.0, 10.0, 110.0, 110.0, 0.9, 0.0, 12.0, 12.0, 108.0, 108.0, 0.8, 0.0,
+            ],
+        );
+        assert_eq!(decode(&tensor, &image(), &config()).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn rejects_unknown_output_rank() {
+        let error = decode(&output(vec![1, 2, 3, 4], vec![]), &image(), &config()).unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("unsupported YOLO detection output shape"));
+    }
+
+    #[test]
+    fn auto_detects_objectness_layout_from_label_count() {
+        let tensor = output(vec![1, 7], vec![320.0, 240.0, 100.0, 80.0, 0.5, 0.8, 0.2]);
+        let detections = decode(&tensor, &image(), &config()).unwrap();
+        assert_eq!(detections.len(), 1);
+        assert!((detections[0].score - 0.4).abs() < 0.0001);
     }
 }

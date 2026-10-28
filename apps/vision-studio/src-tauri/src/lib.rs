@@ -455,6 +455,11 @@ fn list_models() -> Vec<FileEntry> {
     list_files(&project_root().join("models"), "onnx")
 }
 
+#[tauri::command]
+fn model_catalog() -> Result<serde_json::Value, String> {
+    read_json_file(&project_root().join("models").join("registry.json"))
+}
+
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -473,6 +478,7 @@ pub fn run() {
             read_trace,
             read_artifact,
             list_models,
+            model_catalog,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Vision Studio");

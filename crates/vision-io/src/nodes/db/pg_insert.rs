@@ -8,7 +8,7 @@ pub(crate) fn register(registry: &mut OperatorRegistry) {
         "db.pg.insert",
         "PostgreSQL Insert",
         &[],
-        &["payload", "data", "stats"],
+        &["payload", "result", "final", "data", "stats"],
         pg_insert,
     );
 }

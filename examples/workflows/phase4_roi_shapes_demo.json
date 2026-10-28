@@ -1,0 +1,70 @@
+{
+  "id": "phase4_roi_shapes_demo",
+  "name": "phase4_roi_shapes_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "circle",
+      "operator": "opencv.roi.circle",
+      "params": {
+        "cx": 480,
+        "cy": 640,
+        "radius": 300
+      }
+    },
+    {
+      "id": "polygon",
+      "operator": "opencv.roi.polygon",
+      "params": {
+        "points": [[120,120],[840,180],[760,980],[180,1080]]
+      }
+    },
+    {
+      "id": "write_circle",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/phase4_roi_circle.png"
+      }
+    },
+    {
+      "id": "write_polygon",
+      "operator": "opencv.image.write",
+      "params": {
+        "output": "demo/output/phase4_roi_polygon.png"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "circle",
+      "to_port": "image"
+    },
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "polygon",
+      "to_port": "image"
+    },
+    {
+      "from_node": "circle",
+      "from_port": "image",
+      "to_node": "write_circle",
+      "to_port": "image"
+    },
+    {
+      "from_node": "polygon",
+      "from_port": "image",
+      "to_node": "write_polygon",
+      "to_port": "image"
+    }
+  ]
+}

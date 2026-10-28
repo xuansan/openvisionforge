@@ -1,0 +1,152 @@
+{
+  "id": "phase4_roi_calibration_measure_demo",
+  "name": "phase4_roi_calibration_measure_demo",
+  "version": "0.1.0",
+  "nodes": [
+    {
+      "id": "read",
+      "operator": "opencv.image.read",
+      "params": {
+        "path": "demo/input/d34084cc1f765c877abcdf2d515cacf3.jpg"
+      }
+    },
+    {
+      "id": "roi",
+      "operator": "opencv.roi.rectangle",
+      "params": {
+        "x": 40,
+        "y": 40,
+        "width": 880,
+        "height": 1200
+      }
+    },
+    {
+      "id": "gray",
+      "operator": "opencv.color.to_gray",
+      "params": {}
+    },
+    {
+      "id": "threshold",
+      "operator": "opencv.threshold.fixed",
+      "params": {
+        "threshold": 128,
+        "max_value": 255
+      }
+    },
+    {
+      "id": "contours",
+      "operator": "opencv.analysis.find_contours",
+      "params": {
+        "min_area": 100,
+        "max_contours": 20
+      }
+    },
+    {
+      "id": "size_px",
+      "operator": "opencv.measure.contour_size",
+      "params": {}
+    },
+    {
+      "id": "reference_px",
+      "operator": "opencv.measure.point_distance",
+      "params": {
+        "x1": 0,
+        "y1": 0,
+        "x2": 200,
+        "y2": 0
+      }
+    },
+    {
+      "id": "scale",
+      "operator": "measure.scale.reference",
+      "params": {
+        "reference_mm": 10,
+        "measurement_name": "point_distance"
+      }
+    },
+    {
+      "id": "size_mm",
+      "operator": "measure.units.convert",
+      "params": {}
+    },
+    {
+      "id": "width_rule",
+      "operator": "rule.numeric_range",
+      "params": {
+        "rule_id": "roi_contour_width_mm",
+        "field": "contour_size.width_px",
+        "min": 0.01,
+        "max": 100
+      }
+    },
+    {
+      "id": "final",
+      "operator": "logic.final_result",
+      "params": {
+        "rule_id": "roi_calibration_final"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "read",
+      "from_port": "image",
+      "to_node": "roi",
+      "to_port": "image"
+    },
+    {
+      "from_node": "roi",
+      "from_port": "image",
+      "to_node": "gray",
+      "to_port": "image"
+    },
+    {
+      "from_node": "gray",
+      "from_port": "image",
+      "to_node": "threshold",
+      "to_port": "image"
+    },
+    {
+      "from_node": "threshold",
+      "from_port": "image",
+      "to_node": "contours",
+      "to_port": "image"
+    },
+    {
+      "from_node": "contours",
+      "from_port": "contours",
+      "to_node": "size_px",
+      "to_port": "contours"
+    },
+    {
+      "from_node": "reference_px",
+      "from_port": "measurements",
+      "to_node": "scale",
+      "to_port": "measurements"
+    },
+    {
+      "from_node": "size_px",
+      "from_port": "measurements",
+      "to_node": "size_mm",
+      "to_port": "data"
+    },
+    {
+      "from_node": "scale",
+      "from_port": "scale",
+      "to_node": "size_mm",
+      "to_port": "scale"
+    },
+    {
+      "from_node": "size_mm",
+      "from_port": "data",
+      "to_node": "width_rule",
+      "to_port": "data"
+    },
+    {
+      "from_node": "width_rule",
+      "from_port": "rule",
+      "to_node": "final",
+      "to_port": "rule"
+    }
+  ]
+}
